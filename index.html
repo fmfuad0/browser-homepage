@@ -48,7 +48,7 @@
       <!-- Time & Date Widget -->
       <div class="clock-widget fade-in">
         <div class="clock-time-wrapper">
-          <span id="clockTime" class="clock-time">00:00</span>
+          <span id="clockTime" class="clock-time">11:18</span>
           <span id="clockPeriod" class="clock-period">AM</span>
         </div>
         <div id="clockDate" class="clock-date">Saturday, August 15</div>
@@ -60,7 +60,7 @@
           <button type="button" id="searchEngineBtn" class="search-engine-btn" title="Change Search Engine">
             <img id="searchEngineIcon" class="search-engine-icon" src="https://www.google.com/favicon.ico" alt="Google">
           </button>
-          <input type="text" id="searchInput" class="search-input" placeholder="Search the Web" autocomplete="off" autofocus>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search the Web" autocomplete="off">
           <button type="submit" class="search-submit-btn" title="Search">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </button>
@@ -79,7 +79,9 @@
       
       <!-- Real-time Weather Greeting Widget -->
       <div class="greeting-widget fade-in">
-        <h1 id="greetingHeading" class="greeting-heading">Good Morning</h1>
+        <div style="display: flex; align-items: center; gap: 0.5rem">
+          <h1 id="greetingHeading" class="greeting-heading">Good Morning</h1><h1 style="text-align: center; font-size: 20px;">👋</h1>
+        </div>
         <div class="greeting-subtext">
           <span id="greetingSubtext">Mellow start to the day.</span>
           <div id="weatherBadge" class="weather-badge" title="Click to toggle °C / °F">
@@ -202,61 +204,145 @@
         </button>
       </div>
 
+      <!-- Tab Bar Header -->
+      <div class="settings-tab-bar">
+        <button type="button" class="settings-tab-btn active" data-tab="appearance">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a7 7 0 1 0 10 7"></path></svg>
+          Appearance
+        </button>
+        <button type="button" class="settings-tab-btn" data-tab="wallpaper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          Wallpaper
+        </button>
+        <button type="button" class="settings-tab-btn" data-tab="profile">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          Profile & Text
+        </button>
+        <button type="button" class="settings-tab-btn" data-tab="preferences">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          Preferences
+        </button>
+      </div>
+
       <div class="modal-body">
         
-        <!-- Dynamic Accent Color Selection -->
-        <div class="settings-section">
-          <div class="settings-section-title">Accent Color</div>
-          <div class="color-picker-row">
-            <div id="accentColorSwatches" class="color-picker-row" style="gap:0.6rem;">
-              <!-- Preset Swatches injected dynamically -->
+        <!-- Tab 1: Appearance -->
+        <div id="tab-appearance" class="settings-tab-pane active">
+          <!-- Dynamic Accent Color Selection -->
+          <div class="settings-section">
+            <div class="settings-section-title">Accent Color</div>
+            <div class="color-picker-row">
+              <div id="accentColorSwatches" class="color-picker-row" style="gap:0.6rem;">
+                <!-- Preset Swatches injected dynamically -->
+              </div>
+              <label class="custom-color-btn" title="Pick custom color">
+                <input type="color" id="accentColorPicker" class="custom-color-input" value="#00ffff">
+                <span>Custom</span>
+              </label>
             </div>
-            <label class="custom-color-btn" title="Pick custom color">
-              <input type="color" id="accentColorPicker" class="custom-color-input" value="#00ffff">
-              <span>Custom</span>
-            </label>
+          </div>
+
+          <!-- Search Bar Background Blur Settings -->
+          <div class="settings-section">
+            <div class="settings-section-title">Search Focus Background Blur</div>
+            <div style="display:flex; align-items:center; gap:1rem;">
+              <input type="range" id="searchBlurSlider" class="volume-slider" min="0" max="30" step="1" value="12">
+              <span id="searchBlurValueLabel" style="font-size:0.9rem; font-weight:600; color:rgb(var(--accent-rgb)); min-width:40px;">12px</span>
+            </div>
           </div>
         </div>
 
-        <!-- Wallpaper Selection -->
-        <div class="settings-section">
-          <div class="settings-section-title">Background Wallpaper</div>
-          <div id="wallpaperGrid" class="wallpaper-grid">
-            <!-- Wallpapers injected dynamically -->
-          </div>
-          <div style="margin-top:0.5rem;">
-            <label for="customWallpaperInput" class="btn-secondary" style="width:100%; cursor:pointer;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-              Upload Custom Video or Image
-            </label>
-            <input type="file" id="customWallpaperInput" accept="video/mp4,video/webm,image/*" style="display:none;">
+        <!-- Tab 2: Wallpaper -->
+        <div id="tab-wallpaper" class="settings-tab-pane">
+          <div class="settings-section">
+            <div class="settings-header-row">
+              <div class="settings-section-title">Background Wallpaper Gallery</div>
+              <span id="wallpaperCountBadge" class="wallpaper-count-badge">3 Wallpapers</span>
+            </div>
+            <div id="wallpaperGrid" class="wallpaper-grid">
+              <!-- Wallpapers injected dynamically -->
+            </div>
+            <div class="wallpaper-actions-row">
+              <button type="button" id="selectFolderBtn" class="btn-secondary flex-1" title="Select a local folder with video/image wallpapers">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                Select Folder
+              </button>
+              <label for="customWallpaperInput" class="btn-secondary flex-1" style="cursor:pointer;" title="Add individual video or image files">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                Add Files
+              </label>
+              <button type="button" id="clearCustomGalleryBtn" class="btn-secondary btn-icon-only" title="Clear Custom Wallpapers" style="display:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+              <input type="file" id="customWallpaperInput" accept="video/*,image/*" multiple style="display:none;">
+              <input type="file" id="folderWallpaperInput" webkitdirectory directory multiple style="display:none;">
+            </div>
           </div>
         </div>
 
-        <!-- Search Bar Background Blur Settings -->
-        <div class="settings-section">
-          <div class="settings-section-title">Search Focus Background Blur</div>
-          <div style="display:flex; align-items:center; gap:1rem;">
-            <input type="range" id="searchBlurSlider" class="volume-slider" min="0" max="30" step="1" value="12">
-            <span id="searchBlurValueLabel" style="font-size:0.9rem; font-weight:600; color:rgb(var(--accent-rgb)); min-width:40px;">12px</span>
+        <!-- Tab 3: Profile & Typography -->
+        <div id="tab-profile" class="settings-tab-pane">
+          <!-- User Display Name -->
+          <div class="settings-section">
+            <div class="settings-section-title">Your Name</div>
+            <input type="text" id="userDisplayNameInput" class="form-input" placeholder="Type your name (e.g. Alex)..." autocomplete="off">
+          </div>
+
+          <!-- Widget Typography & Online Fonts -->
+          <div class="settings-section">
+            <div class="settings-header-row">
+              <div class="settings-section-title">Widget Typography</div>
+              <span id="fontCountBadge" class="wallpaper-count-badge">0 / 4 Custom Fonts</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="clockFontSelect">Time & Date Widget Font</label>
+              <select id="clockFontSelect" class="form-select"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="greetingFontSelect">Greeting Message Font</label>
+              <select id="greetingFontSelect" class="form-select"></select>
+            </div>
+            <div class="font-import-wrapper">
+              <label class="form-label" for="customFontInput">Import Online Font (Google Fonts / CSS Web Font)</label>
+              <div style="display:flex; gap:0.5rem;">
+                <input type="text" id="customFontInput" class="form-input" placeholder="Font name (e.g. Poppins, Fira Code, Montserrat)..." autocomplete="off">
+                <button type="button" id="importFontBtn" class="btn-secondary" style="width:auto; white-space:nowrap;">Import</button>
+              </div>
+              <div id="customFontsChipsContainer" class="custom-fonts-chips"></div>
+            </div>
+          </div>
+
+          <!-- Clock Format -->
+          <div class="settings-section">
+            <div class="settings-section-title">Time Format</div>
+            <select id="clockFormatSelect" class="form-select">
+              <option value="12">12-Hour (11:18 AM)</option>
+              <option value="24">24-Hour (11:18)</option>
+            </select>
           </div>
         </div>
 
-        <!-- Clock Format -->
-        <div class="settings-section">
-          <div class="settings-section-title">Time Format</div>
-          <select id="clockFormatSelect" class="form-select">
-            <option value="12">12-Hour (11:18 AM)</option>
-            <option value="24">24-Hour (11:18)</option>
-          </select>
-        </div>
+        <!-- Tab 4: Preferences -->
+        <div id="tab-preferences" class="settings-tab-pane">
+          <!-- Weather Location Settings -->
+          <div class="settings-section">
+            <div class="settings-section-title">Weather Location</div>
+            <div class="city-search-wrapper">
+              <input type="text" id="weatherCityInput" class="form-input" placeholder="Type city name (e.g. London, Tokyo, New York)..." autocomplete="off">
+              <button type="button" id="autoIpWeatherBtn" class="btn-secondary" style="width:auto; white-space:nowrap;" title="Reset to automatic IP location">
+                Auto IP
+              </button>
+              <div id="weatherCityResults" class="city-search-results"></div>
+            </div>
+          </div>
 
-        <!-- Default Search Engine -->
-        <div class="settings-section">
-          <div class="settings-section-title">Default Search Engine</div>
-          <select id="settingsSearchEngineSelect" class="form-select">
-            <!-- Injected by settings.js -->
-          </select>
+          <!-- Default Search Engine -->
+          <div class="settings-section">
+            <div class="settings-section-title">Default Search Engine</div>
+            <select id="settingsSearchEngineSelect" class="form-select">
+              <!-- Injected by settings.js -->
+            </select>
+          </div>
         </div>
 
       </div>

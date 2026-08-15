@@ -1,6 +1,10 @@
 /**
  * Real-time Weather & Dynamic Greeting Module
- * Powered by Open-Meteo API + Geolocation
+ * Accurate weather fetching WITHOUT requiring browser location permissions.
+ * Strategy:
+ * 1. User-configured City (saved in LocalStorage)
+ * 2. Automatic IP-based Geolocation via ipapi.co (Zero permission popups)
+ * 3. Open-Meteo Geocoding API for manual City Search in Settings
  */
 
 export class WeatherGreetingService {
@@ -47,24 +51,25 @@ export class WeatherGreetingService {
     return greeting;
   }
 
+  /**
+   * Resolves location WITHOUT browser permission prompts:
+   * 1. Check custom saved city in LocalStorage
+   * 2. Automatic IP Geolocation (ipapi.co / ip-api.com)
+   */
   async getLocation() {
-    return new Promise((resolve) => {
-      if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
-          },
-          async () => {
-            // Fallback to IP Geolocation
-            const ipLoc = await this.getLocationByIP();
-            resolve(ipLoc);
-          },
-          { timeout: 5000 }
-        );
-      } else {
-        this.getLocationByIP().then(resolve);
+    // 1. Check custom saved location
+    const saved = localStorage.getItem('user_weather_location');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.lat && parsed.lon) return parsed;
+      } catch (e) {
+        console.warn('Invalid saved weather location');
       }
-    });
+    }
+
+    // 2. IP Geolocation (Zero permission popup)
+    return await this.getLocationByIP();
   }
 
   async getLocationByIP() {
@@ -72,13 +77,74 @@ export class WeatherGreetingService {
       const res = await fetch('https://ipapi.co/json/');
       if (res.ok) {
         const data = await res.json();
-        return { lat: data.latitude, lon: data.longitude, city: data.city };
+        if (data.latitude && data.longitude) {
+          return {
+            lat: data.latitude,
+            lon: data.longitude,
+            city: data.city || data.region || 'Local'
+          };
+        }
       }
     } catch (e) {
-      console.warn('IP location failed, using default coords');
+      console.warn('ipapi.co lookup failed, trying secondary IP service', e);
     }
-    // Default fallback (London)
-    return { lat: 51.5074, lon: -0.1278, city: 'London' };
+
+    try {
+      const res2 = await fetch('http://ip-api.com/json/');
+      if (res2.ok) {
+        const data2 = await res2.json();
+        if (data2.lat && data2.lon) {
+          return {
+            lat: data2.lat,
+            lon: data2.lon,
+            city: data2.city || 'Local'
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Secondary IP lookup failed');
+    }
+
+    // Default fallback (New York)
+    return { lat: 40.7128, lon: -74.0060, city: 'New York' };
+  }
+
+  /**
+   * Search city coordinates via Open-Meteo Geocoding API
+   */
+  static async searchCities(query) {
+    if (!query || query.trim().length < 2) return [];
+    try {
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query.trim())}&count=5&language=en&format=json`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.results) {
+          return data.results.map(r => ({
+            name: r.name,
+            country: r.country || '',
+            admin1: r.admin1 || '',
+            lat: r.latitude,
+            lon: r.longitude,
+            label: `${r.name}${r.admin1 ? ', ' + r.admin1 : ''}${r.country ? ', ' + r.country : ''}`
+          }));
+        }
+      }
+    } catch (e) {
+      console.error('City geocoding search error:', e);
+    }
+    return [];
+  }
+
+  async setLocation(lat, lon, cityName) {
+    const locObj = { lat, lon, city: cityName };
+    localStorage.setItem('user_weather_location', JSON.stringify(locObj));
+    await this.fetchWeather();
+  }
+
+  async clearCustomLocation() {
+    localStorage.removeItem('user_weather_location');
+    await this.fetchWeather();
   }
 
   async fetchWeather() {
@@ -93,7 +159,7 @@ export class WeatherGreetingService {
       this.currentWeather = {
         tempC: Math.round(data.current_weather.temperature),
         code: data.current_weather.weathercode,
-        city: loc.city || ''
+        city: loc.city || 'Local'
       };
 
       this.renderWeatherBadge();
@@ -114,7 +180,7 @@ export class WeatherGreetingService {
       : this.currentWeather.tempC;
     
     const icon = this.getWeatherIcon(this.currentWeather.code);
-    this.badgeEl.innerHTML = `${icon} <span>${temp}°${this.tempUnit}</span>`;
+    this.badgeEl.innerHTML = `${icon} <span>${temp}°${this.tempUnit} • ${this.currentWeather.city}</span>`;
   }
 
   getWeatherIcon(code) {

@@ -41,35 +41,91 @@
 }
 
 .modal-header {
-  padding: 1.5rem 1.75rem 1.25rem 1.75rem;
+  padding: 1.25rem 1.75rem 1rem 1.75rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.modal-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #ffffff;
+/* Settings Tab Bar Navigation */
+.settings-tab-bar {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.4rem;
+  padding: 0.5rem 1.5rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-x: auto;
+}
+
+.settings-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.65);
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.settings-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.settings-tab-btn.active {
+  color: #ffffff;
+  background: rgba(var(--accent-rgb), 0.15);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.15);
+}
+
+.settings-tab-btn svg {
+  stroke-width: 2;
+  transition: transform 0.2s ease;
+}
+
+.settings-tab-btn.active svg {
+  color: rgb(var(--accent-rgb));
 }
 
 .modal-body {
   padding: 1.5rem 1.75rem;
-  max-height: 70vh;
+  max-height: 65vh;
   overflow-y: auto;
-  display: flex;
+}
+
+/* Tab Panes */
+.settings-tab-pane {
+  display: none;
   flex-direction: column;
   gap: 1.5rem;
+  animation: fadeInPane 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.settings-tab-pane.active {
+  display: flex;
+}
+
+@keyframes fadeInPane {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .settings-section {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+  position: relative;
 }
 
 .settings-section-title {
@@ -80,14 +136,62 @@
   color: rgb(var(--accent-rgb));
 }
 
+.settings-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wallpaper-count-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  background: rgba(var(--accent-rgb), 0.15);
+  color: rgb(var(--accent-rgb));
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+}
+
+.wallpaper-actions-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.flex-1 {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-secondary.btn-icon-only {
+  width: 42px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.3);
+}
+
+.btn-secondary.btn-icon-only:hover {
+  background: rgba(255, 107, 107, 0.2);
+  border-color: #ff6b6b;
+}
+
 .wallpaper-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 1rem;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .wallpaper-thumb {
-  height: 80px;
+  height: 84px;
   border-radius: 12px;
   border: 2px solid transparent;
   overflow: hidden;
@@ -96,6 +200,7 @@
   transition: all 0.2s ease;
   background-size: cover;
   background-position: center;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .wallpaper-thumb:hover {
@@ -108,16 +213,77 @@
   box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.35);
 }
 
+.wallpaper-thumb-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .wallpaper-thumb-label {
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
-  padding: 0.3rem 0.5rem;
-  background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
-  font-size: 0.75rem;
+  padding: 0.35rem 0.5rem;
+  background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 100%);
+  font-size: 0.72rem;
   color: #fff;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 2;
+}
+
+.wallpaper-type-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 0.15rem 0.4rem;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  border-radius: 6px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  text-transform: uppercase;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.wallpaper-type-badge.video-badge {
+  background: rgba(var(--accent-rgb), 0.85);
+  color: #000000;
+}
+
+.wallpaper-delete-btn {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 59, 48, 0.85);
+  color: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 3;
+}
+
+.wallpaper-thumb:hover .wallpaper-delete-btn {
+  opacity: 1;
+}
+
+.wallpaper-delete-btn:hover {
+  transform: scale(1.15);
+  background: #ff3b30;
 }
 
 /* Accent Color Swatches & Picker */
@@ -184,6 +350,48 @@
   border-radius: 50%;
 }
 
+/* City Weather Search Autocomplete */
+.city-search-wrapper {
+  position: relative;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.city-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: rgba(22, 26, 36, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  margin-top: 4px;
+  z-index: 100;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  display: none;
+}
+
+.city-search-item {
+  padding: 0.6rem 1rem;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s ease;
+}
+
+.city-search-item:last-child {
+  border-bottom: none;
+}
+
+.city-search-item:hover {
+  background: rgba(var(--accent-rgb), 0.2);
+  color: #ffffff;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -231,4 +439,49 @@
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.45);
+}
+
+/* Custom Online Fonts Management */
+.font-import-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.custom-fonts-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.font-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.2s ease;
+}
+
+.font-chip-remove {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 50%;
+  transition: color 0.15s ease;
+}
+
+.font-chip-remove:hover {
+  color: #ff4d4d;
 }

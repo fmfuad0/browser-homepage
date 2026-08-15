@@ -50,10 +50,10 @@ export class WallpaperEngine {
     this.setupEventListeners();
     const savedId = localStorage.getItem('active_wallpaper_id') || 'lofi-room';
     
-    // Load preset wallpaper instantly first
+    // Load preset wallpaper instantly first for zero page load latency
     this.loadPresetWallpaper(savedId);
 
-    // Initialize DB asynchronously for custom wallpapers
+    // Initialize DB asynchronously for custom wallpapers without blocking main thread
     this.initDB().then(async () => {
       if (savedId.startsWith('custom-')) {
         await this.loadCustomWallpaperFromDB(savedId);
@@ -63,7 +63,7 @@ export class WallpaperEngine {
 
   initDB() {
     return new Promise((resolve) => {
-      const request = indexedDB.open('BrowserHomepageDB', 2);
+      const request = indexedDB.open('BrowserHomepageDB', 3);
       request.onupgradeneeded = (e) => {
         const db = e.target.result;
         if (!db.objectStoreNames.contains('wallpapers')) {
@@ -117,7 +117,9 @@ export class WallpaperEngine {
   }
 
   async loadCustomWallpaperFromDB(id) {
+    if (!this.db) await this.initDB();
     if (!this.db) return;
+
     const customWp = await new Promise((resolve) => {
       const tx = this.db.transaction('wallpapers', 'readonly');
       const store = tx.objectStore('wallpapers');
@@ -126,13 +128,31 @@ export class WallpaperEngine {
       req.onerror = () => resolve(null);
     });
 
-    if (customWp && customWp.blob) {
-      if (this.customObjectUrl) {
-        URL.revokeObjectURL(this.customObjectUrl);
+    if (!customWp) return;
+
+    try {
+      let fileBlob = customWp.blob;
+      if (!fileBlob && customWp.handle) {
+        // If handle permission is needed, query/request permission
+        const perm = await customWp.handle.queryPermission({ mode: 'read' });
+        if (perm === 'granted' || (await customWp.handle.requestPermission({ mode: 'read' })) === 'granted') {
+          fileBlob = await customWp.handle.getFile();
+        }
       }
-      this.customObjectUrl = URL.createObjectURL(customWp.blob);
-      customWp.url = this.customObjectUrl;
-      this.applyWallpaper(customWp);
+
+      if (fileBlob) {
+        if (this.customObjectUrl) {
+          URL.revokeObjectURL(this.customObjectUrl);
+        }
+        this.customObjectUrl = URL.createObjectURL(fileBlob);
+        const resolvedWp = {
+          ...customWp,
+          url: this.customObjectUrl
+        };
+        this.applyWallpaper(resolvedWp);
+      }
+    } catch (err) {
+      console.warn('Failed to load custom wallpaper from storage:', err);
     }
   }
 
@@ -177,16 +197,32 @@ export class WallpaperEngine {
     document.documentElement.style.setProperty('--search-blur-amount', `${focusBlur}px`);
   }
 
+  // Utility to determine media type from extension or mime
+  static isSupportedMedia(filename, mimeType = '') {
+    const ext = filename.split('.').pop().toLowerCase();
+    const videoExts = ['mp4', 'webm', 'ogv', 'mov', 'm4v', 'mkv'];
+    const imageExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'svg'];
+
+    if (mimeType.startsWith('video/') || videoExts.includes(ext)) {
+      return { supported: true, type: 'video' };
+    }
+    if (mimeType.startsWith('image/') || imageExts.includes(ext)) {
+      return { supported: true, type: 'image' };
+    }
+    return { supported: false, type: null };
+  }
+
   async saveCustomWallpaper(file) {
+    const media = WallpaperEngine.isSupportedMedia(file.name, file.type);
+    if (!media.supported) return null;
+    if (!this.db) await this.initDB();
     if (!this.db) return null;
-    const isVideo = file.type.startsWith('video/');
-    
-    // Store actual File/Blob object in IndexedDB
+
     const wpRecord = {
-      id: 'custom-' + Date.now(),
+      id: 'custom-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
       name: file.name,
-      type: isVideo ? 'video' : 'image',
-      blob: file, // File is a subclass of Blob
+      type: media.type,
+      blob: file,
       timestamp: Date.now()
     };
 
@@ -201,4 +237,126 @@ export class WallpaperEngine {
     await this.loadCustomWallpaperFromDB(wpRecord.id);
     return wpRecord;
   }
+
+  async saveCustomFiles(files) {
+    if (!this.db) await this.initDB();
+    if (!this.db) return [];
+
+    const fileArray = Array.from(files);
+    const validRecords = [];
+
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
+      const media = WallpaperEngine.isSupportedMedia(file.name, file.type);
+      if (media.supported) {
+        validRecords.push({
+          id: 'custom-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substring(2, 6),
+          name: file.name,
+          type: media.type,
+          blob: file,
+          timestamp: Date.now()
+        });
+      }
+    }
+
+    if (validRecords.length === 0) return [];
+
+    await new Promise((resolve, reject) => {
+      const tx = this.db.transaction('wallpapers', 'readwrite');
+      const store = tx.objectStore('wallpapers');
+      validRecords.forEach(rec => store.put(rec));
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = (e) => reject(e);
+    });
+
+    return validRecords;
+  }
+
+  async scanAndSaveDirectoryHandle(dirHandle) {
+    if (!this.db) await this.initDB();
+    if (!this.db) return [];
+
+    const validRecords = [];
+    let counter = 0;
+
+    const scanDir = async (handle) => {
+      for await (const entry of handle.values()) {
+        if (entry.kind === 'file') {
+          const media = WallpaperEngine.isSupportedMedia(entry.name);
+          if (media.supported) {
+            try {
+              const file = await entry.getFile();
+              validRecords.push({
+                id: 'custom-' + Date.now() + '-' + (counter++) + '-' + Math.random().toString(36).substring(2, 6),
+                name: entry.name,
+                type: media.type,
+                blob: file,
+                handle: entry,
+                timestamp: Date.now()
+              });
+            } catch (err) {
+              console.warn('Skipping file from handle read error:', entry.name, err);
+            }
+          }
+        } else if (entry.kind === 'directory') {
+          // Scan top-level subdirectories as well
+          await scanDir(entry);
+        }
+      }
+    };
+
+    await scanDir(dirHandle);
+
+    if (validRecords.length === 0) return [];
+
+    await new Promise((resolve, reject) => {
+      const tx = this.db.transaction('wallpapers', 'readwrite');
+      const store = tx.objectStore('wallpapers');
+      validRecords.forEach(rec => store.put(rec));
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = (e) => reject(e);
+    });
+
+    return validRecords;
+  }
+
+  async getAllCustomWallpapers() {
+    if (!this.db) await this.initDB();
+    if (!this.db) return [];
+
+    return new Promise((resolve) => {
+      const tx = this.db.transaction('wallpapers', 'readonly');
+      const store = tx.objectStore('wallpapers');
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+  }
+
+  async deleteCustomWallpaper(id) {
+    if (!this.db) await this.initDB();
+    if (!this.db) return false;
+
+    return new Promise((resolve) => {
+      const tx = this.db.transaction('wallpapers', 'readwrite');
+      const store = tx.objectStore('wallpapers');
+      const req = store.delete(id);
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => resolve(false);
+    });
+  }
+
+  async clearAllCustomWallpapers() {
+    if (!this.db) await this.initDB();
+    if (!this.db) return false;
+
+    return new Promise((resolve) => {
+      const tx = this.db.transaction('wallpapers', 'readwrite');
+      const store = tx.objectStore('wallpapers');
+      const req = store.clear();
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => resolve(false);
+    });
+  }
 }
+

@@ -63,7 +63,7 @@ html, body {
   height: 100%;
   object-fit: cover;
   transition: filter 0.4s ease, transform 0.4s ease, opacity 0.8s ease-in-out;
-  transform: scale(1.02);
+  transform: scale(1.02); 
 }
 
 /* Blur Background when Search bar is focused or hovered */
@@ -79,7 +79,7 @@ body.search-focused .background-media,
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
+  background: radial-gradient(circle at center, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.55) 100%);
   pointer-events: none;
   z-index: 2;
   transition: background 0.4s ease;
@@ -128,11 +128,11 @@ body.search-focused .background-overlay {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--glass-bg);
+  background: transparent;
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  color: var(--text-main);
+  border: 1px solid rgba(var(--accent-rgb), 0.5);
+  color: var(--accent-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -143,8 +143,8 @@ body.search-focused .background-overlay {
 }
 
 .btn-icon:hover {
-  background: var(--glass-bg-hover);
-  border-color: rgba(var(--accent-rgb), 0.4);
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.9);
   transform: translateY(-2px) scale(1.05);
 }
 
@@ -167,10 +167,10 @@ body.search-focused .background-overlay {
   position: absolute;
   top: 54px;
   left: 0;
-  background: rgba(18, 20, 26, 0.85);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--glass-border);
+  /* backdrop-filter: blur(4px); */
+  /* -webkit-backdrop-filter: blur(4px); */
+  background: transparent;
+  border: 1px solid rgba(var(--accent-rgb), 0.5);
   padding: 0.8rem 1rem;
   border-radius: 14px;
   display: flex;
@@ -208,7 +208,7 @@ body.search-focused .background-overlay {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--accent-rgb);
   box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.6);
   cursor: pointer;
   transition: transform 0.15s ease;
@@ -278,6 +278,7 @@ body.search-focused .background-overlay {
   margin-top: 0.4rem;
   letter-spacing: 2px;
   font-weight: bold;
+  background: linear-gradient(90deg, rgb(var(--accent-rgb)) 0%, transparent 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke-color: rgb(var(--accent-rgb));

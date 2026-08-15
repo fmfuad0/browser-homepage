@@ -71,7 +71,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     closeBtnId: 'closeSettingsBtn',
     wallpaperEngine,
     clockWidget,
-    searchManager
+    searchManager,
+    weatherService
   });
   settingsManager.init();
 

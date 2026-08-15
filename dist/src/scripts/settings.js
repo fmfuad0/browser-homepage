@@ -1,11 +1,12 @@
 /**
  * Settings Modal & User Preferences Controller
  * Handles wallpaper selection, search focus blur, 12h/24h clock, search engine,
- * and dynamic RGB Accent Color system with custom element opacities.
+ * dynamic RGB Accent Color system, and City Search for accurate weather without permissions.
  */
 
 import { PRESET_WALLPAPERS } from './wallpaper.js';
 import { SEARCH_ENGINES } from './search.js';
+import { WeatherGreetingService } from './weather.js';
 
 export const PRESET_ACCENT_COLORS = [
   { name: 'Cyan Blue', hex: '#00ffff' },
@@ -38,6 +39,9 @@ export class SettingsManager {
     this.wallpaperEngine = options.wallpaperEngine;
     this.clockWidget = options.clockWidget;
     this.searchManager = options.searchManager;
+    this.weatherService = options.weatherService;
+
+    this.citySearchTimeout = null;
   }
 
   init() {
@@ -85,6 +89,63 @@ export class SettingsManager {
 
       colorPicker.addEventListener('input', (e) => {
         this.setAccentColor(e.target.value);
+      });
+    }
+
+    // City Search Input for Weather
+    const cityInput = document.getElementById('weatherCityInput');
+    const cityResults = document.getElementById('weatherCityResults');
+    const autoIpBtn = document.getElementById('autoIpWeatherBtn');
+
+    if (cityInput && cityResults) {
+      cityInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        if (this.citySearchTimeout) clearTimeout(this.citySearchTimeout);
+        
+        if (query.length < 2) {
+          cityResults.style.display = 'none';
+          cityResults.innerHTML = '';
+          return;
+        }
+
+        this.citySearchTimeout = setTimeout(async () => {
+          const results = await WeatherGreetingService.searchCities(query);
+          if (results.length > 0) {
+            cityResults.innerHTML = '';
+            results.forEach(res => {
+              const item = document.createElement('div');
+              item.className = 'city-search-item';
+              item.textContent = res.label;
+              item.addEventListener('click', async () => {
+                cityInput.value = res.name;
+                cityResults.style.display = 'none';
+                if (this.weatherService) {
+                  await this.weatherService.setLocation(res.lat, res.lon, res.name);
+                }
+              });
+              cityResults.appendChild(item);
+            });
+            cityResults.style.display = 'block';
+          } else {
+            cityResults.style.display = 'none';
+          }
+        }, 300);
+      });
+
+      // Hide results when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!cityInput.contains(e.target) && !cityResults.contains(e.target)) {
+          cityResults.style.display = 'none';
+        }
+      });
+    }
+
+    if (autoIpBtn) {
+      autoIpBtn.addEventListener('click', async () => {
+        if (cityInput) cityInput.value = '';
+        if (this.weatherService) {
+          await this.weatherService.clearCustomLocation();
+        }
       });
     }
 
@@ -182,8 +243,6 @@ export class SettingsManager {
     const swatches = document.querySelectorAll('.color-swatch');
     const currentHex = hex.toLowerCase();
     swatches.forEach(swatch => {
-      const bg = swatch.style.backgroundColor;
-      // Compare hex values
       swatch.classList.toggle('active', swatch.title && PRESET_ACCENT_COLORS.find(p => p.name === swatch.title && p.hex.toLowerCase() === currentHex));
     });
   }
@@ -246,6 +305,19 @@ export class SettingsManager {
     const colorPicker = document.getElementById('accentColorPicker');
     if (colorPicker) {
       colorPicker.value = localStorage.getItem('accent_color') || '#00ffff';
+    }
+
+    const cityInput = document.getElementById('weatherCityInput');
+    if (cityInput) {
+      const savedLoc = localStorage.getItem('user_weather_location');
+      if (savedLoc) {
+        try {
+          const parsed = JSON.parse(savedLoc);
+          cityInput.value = parsed.city || '';
+        } catch (e) {}
+      } else {
+        cityInput.value = '';
+      }
     }
 
     this.renderAccentColorSwatches();

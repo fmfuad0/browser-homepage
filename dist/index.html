@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Tab</title>
+  <meta name="description" content="Personalized custom homepage and new tab page with live video wallpapers, real-time weather greetings, shortcuts, and bookmarks drawer.">
+  
+  <link rel="stylesheet" href="./src/styles/main.css">
+  <link rel="stylesheet" href="./src/styles/glassmorphism.css">
+  <link rel="stylesheet" href="./src/styles/shortcuts.css">
+  <link rel="stylesheet" href="./src/styles/bookmarks.css">
+  <link rel="stylesheet" href="./src/styles/settings.css">
+</head>
+<body>
+
+  <!-- Background Media & Video Layer -->
+  <div id="backgroundContainer" class="background-container">
+    <!-- Media element injected dynamically by wallpaper.js -->
+  </div>
+  <div class="background-overlay"></div>
+
+  <!-- Independent Fixed Top Controls -->
+  <div class="top-control-music">
+    <div class="audio-control-wrapper">
+      <button id="audioToggleBtn" class="btn-icon" title="Toggle Ambient Audio">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+      </button>
+      <div class="volume-popover">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+        <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.05" value="0.5">
+      </div>
+    </div>
+  </div>
+
+  <div class="top-control-bookmark">
+    <button id="bookmarksToggleBtn" class="btn-icon" title="Bookmarks">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>
+    </button>
+  </div>
+
+  <!-- App Layout Matrix -->
+  <main class="app-container">
+    
+    <!-- Center Hero Area - Positioned High Towards Top -->
+    <section class="hero-center">
+      
+      <!-- Time & Date Widget -->
+      <div class="clock-widget fade-in">
+        <div class="clock-time-wrapper">
+          <span id="clockTime" class="clock-time">11:18</span>
+          <span id="clockPeriod" class="clock-period">AM</span>
+        </div>
+        <div id="clockDate" class="clock-date">Saturday, August 15</div>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="search-container fade-in">
+        <form id="searchForm" class="search-box">
+          <button type="button" id="searchEngineBtn" class="search-engine-btn" title="Change Search Engine">
+            <img id="searchEngineIcon" class="search-engine-icon" src="https://www.google.com/favicon.ico" alt="Google">
+          </button>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search the Web" autocomplete="off" autofocus>
+          <button type="submit" class="search-submit-btn" title="Search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </button>
+        </form>
+      </div>
+
+      <!-- Quick Launch Shortcuts Grid -->
+      <div id="shortcutsContainer" class="shortcuts-container fade-in">
+        <!-- Shortcuts cards injected dynamically by shortcuts.js -->
+      </div>
+
+    </section>
+
+    <!-- Footer Bar -->
+    <footer class="app-footer">
+      
+      <!-- Real-time Weather Greeting Widget -->
+      <div class="greeting-widget fade-in">
+        <h1 id="greetingHeading" class="greeting-heading">Good Morning</h1>
+        <div class="greeting-subtext">
+          <span id="greetingSubtext">Mellow start to the day.</span>
+          <div id="weatherBadge" class="weather-badge" title="Click to toggle °C / °F">
+            <span>☀️ 24°C</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings & Controls Button -->
+      <div class="footer-right">
+        <button id="settingsToggleBtn" class="btn-icon" title="Homepage Settings">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+      </div>
+
+    </footer>
+
+  </main>
+
+  <!-- Slide-Out Bookmarks Drawer Panel -->
+  <aside id="bookmarksDrawer" class="bookmarks-drawer">
+    <div class="bookmarks-header">
+      <div class="bookmarks-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>
+        Bookmarks
+      </div>
+      <button id="closeBookmarksBtn" class="btn-icon" style="width:34px; height:34px;" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <div class="bookmarks-search-box">
+      <input type="text" id="bookmarksSearchInput" class="bookmarks-search-input" placeholder="Search bookmarks...">
+    </div>
+
+    <div id="bookmarksTreeContainer" class="bookmarks-tree-container">
+      <!-- Bookmarks tree list rendered dynamically by bookmarks.js -->
+    </div>
+
+    <div class="bookmarks-actions-footer">
+      <button id="exportBookmarksBtn" class="btn-secondary" title="Export Bookmarks JSON">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        Export
+      </button>
+      <button id="importBookmarksBtn" class="btn-secondary" title="Import Bookmarks JSON">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Import
+      </button>
+      <input type="file" id="importBookmarksInput" accept=".json" style="display:none;">
+    </div>
+  </aside>
+
+  <!-- Add Shortcut Modal -->
+  <div id="addShortcutModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Add Shortcut</div>
+      </div>
+      <form id="addShortcutForm" class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="shortcutTitleInput">Name</label>
+          <input type="text" id="shortcutTitleInput" class="form-input" placeholder="e.g. Google Docs" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="shortcutUrlInput">URL</label>
+          <input type="url" id="shortcutUrlInput" class="form-input" placeholder="https://docs.google.com/document" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="shortcutIconInput">Custom Icon URL (Optional)</label>
+          <input type="url" id="shortcutIconInput" class="form-input" placeholder="https://example.com/icon.png">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem;">
+          <button type="button" id="cancelShortcutBtn" class="btn-secondary" style="width:auto;">Cancel</button>
+          <button type="submit" class="btn-primary">Add Shortcut</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Shortcut Modal -->
+  <div id="editShortcutModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Edit Shortcut</div>
+      </div>
+      <form id="editShortcutForm" class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="editShortcutTitleInput">Name</label>
+          <input type="text" id="editShortcutTitleInput" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editShortcutUrlInput">URL</label>
+          <input type="url" id="editShortcutUrlInput" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editShortcutIconInput">Custom Icon URL (Optional)</label>
+          <input type="url" id="editShortcutIconInput" class="form-input" placeholder="Leave empty for auto favicon">
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem;">
+          <button type="button" id="deleteShortcutBtn" class="btn-secondary" style="color:#ff6b6b; border-color:rgba(255,107,107,0.3);">Delete</button>
+          <div style="display:flex; gap:0.75rem;">
+            <button type="button" id="cancelEditShortcutBtn" class="btn-secondary" style="width:auto;">Cancel</button>
+            <button type="submit" class="btn-primary">Save Changes</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Homepage Settings Modal -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          Homepage Settings
+        </div>
+        <button id="closeSettingsBtn" class="btn-icon" style="width:34px; height:34px;" title="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Dynamic Accent Color Selection -->
+        <div class="settings-section">
+          <div class="settings-section-title">Accent Color</div>
+          <div class="color-picker-row">
+            <div id="accentColorSwatches" class="color-picker-row" style="gap:0.6rem;">
+              <!-- Preset Swatches injected dynamically -->
+            </div>
+            <label class="custom-color-btn" title="Pick custom color">
+              <input type="color" id="accentColorPicker" class="custom-color-input" value="#00ffff">
+              <span>Custom</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Wallpaper Selection -->
+        <div class="settings-section">
+          <div class="settings-section-title">Background Wallpaper</div>
+          <div id="wallpaperGrid" class="wallpaper-grid">
+            <!-- Wallpapers injected dynamically -->
+          </div>
+          <div style="margin-top:0.5rem;">
+            <label for="customWallpaperInput" class="btn-secondary" style="width:100%; cursor:pointer;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              Upload Custom Video or Image
+            </label>
+            <input type="file" id="customWallpaperInput" accept="video/mp4,video/webm,image/*" style="display:none;">
+          </div>
+        </div>
+
+        <!-- Search Bar Background Blur Settings -->
+        <div class="settings-section">
+          <div class="settings-section-title">Search Focus Background Blur</div>
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <input type="range" id="searchBlurSlider" class="volume-slider" min="0" max="30" step="1" value="12">
+            <span id="searchBlurValueLabel" style="font-size:0.9rem; font-weight:600; color:rgb(var(--accent-rgb)); min-width:40px;">12px</span>
+          </div>
+        </div>
+
+        <!-- Clock Format -->
+        <div class="settings-section">
+          <div class="settings-section-title">Time Format</div>
+          <select id="clockFormatSelect" class="form-select">
+            <option value="12">12-Hour (11:18 AM)</option>
+            <option value="24">24-Hour (11:18)</option>
+          </select>
+        </div>
+
+        <!-- Default Search Engine -->
+        <div class="settings-section">
+          <div class="settings-section-title">Default Search Engine</div>
+          <select id="settingsSearchEngineSelect" class="form-select">
+            <!-- Injected by settings.js -->
+          </select>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/scripts/main.js"></script>
+</body>
+</html>

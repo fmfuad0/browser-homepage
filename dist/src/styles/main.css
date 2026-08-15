@@ -1,0 +1,437 @@
+/* Typography imports from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Alex+Brush&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Great+Vibes&display=swap');
+
+:root {
+  --font-main: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-script: 'Great Vibes', 'Alex Brush', cursive;
+  
+  --bg-overlay: rgba(0, 0, 0, 0.35);
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-bg-hover: rgba(255, 255, 255, 0.15);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-glow: rgba(255, 255, 255, 0.25);
+  --glass-blur: blur(20px);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  
+  --text-main: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.75);
+  --text-dim: rgba(255, 255, 255, 0.5);
+  
+  /* Dynamic Accent Color System */
+  /* --accent-rgb holds 'R, G, B' values so rgba(var(--accent-rgb), opacity) works seamlessly everywhere */
+  --accent-rgb: 0, 255, 255;
+  --accent-color: rgb(var(--accent-rgb));
+  --accent-glow: rgba(var(--accent-rgb), 0.25);
+  
+  --search-blur-amount: 12px;
+  
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: var(--font-main);
+  color: var(--text-main);
+  background-color: #0d0f12;
+}
+
+/* Background Media Layer */
+.background-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.background-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: filter 0.4s ease, transform 0.4s ease, opacity 0.8s ease-in-out;
+  transform: scale(1.02);
+}
+
+/* Blur Background when Search bar is focused or hovered */
+body.search-focused .background-media,
+.background-container.search-focused .background-media {
+  filter: blur(var(--search-blur-amount)) brightness(0.7);
+  transform: scale(1.05);
+}
+
+.background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
+  pointer-events: none;
+  z-index: 2;
+  transition: background 0.4s ease;
+}
+
+body.search-focused .background-overlay {
+  background: radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.75) 100%);
+}
+
+/* Main Layout Grid */
+.app-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.5rem 3rem;
+  pointer-events: none;
+}
+
+.app-container > * {
+  pointer-events: auto;
+}
+
+/* Independent Fixed Top Controls */
+.top-control-music {
+  position: fixed;
+  top: 2rem;
+  left: 2.5rem;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.top-control-bookmark {
+  position: fixed;
+  top: 2rem;
+  right: 2.5rem;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+/* Icon Buttons */
+.btn-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+}
+
+.btn-icon:hover {
+  background: var(--glass-bg-hover);
+  border-color: rgba(var(--accent-rgb), 0.4);
+  transform: translateY(-2px) scale(1.05);
+}
+
+.btn-icon:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+/* Audio Control Popover */
+.audio-control-wrapper {
+  position: relative;
+}
+
+.volume-popover {
+  position: absolute;
+  top: 54px;
+  left: 0;
+  background: rgba(18, 20, 26, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  padding: 0.8rem 1rem;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all var(--transition-fast);
+  box-shadow: var(--glass-shadow);
+  z-index: 100;
+  width: 180px;
+}
+
+.audio-control-wrapper:hover .volume-popover,
+.audio-control-wrapper:focus-within .volume-popover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+  cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.6);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: rgb(var(--accent-rgb));
+}
+
+/* Central Hero Area - Positioned Higher Towards Top */
+.hero-center {
+  display: flex;
+  position: relative;
+  top: -30px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1.8rem;
+  width: 100%;
+}
+
+/* Clock & Date Widget */
+.clock-widget {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-shadow: 0 4px 50px rgba(0,0,0,0.3);
+}
+
+.clock-time-wrapper {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.clock-time {
+  font-size: 6rem;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(0deg, rgb(var(--accent-rgb)) 0%, transparent 80%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-color: rgb(var(--accent-rgb));
+  -webkit-text-stroke-width: 0.5px;
+}
+
+.clock-period {
+  font-size: 2.2rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 1px;
+  background: linear-gradient(-90deg, rgb(var(--accent-rgb)) 0%, transparent 80%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-color: rgb(var(--accent-rgb));
+  -webkit-text-stroke-width: 0.3px;
+}
+
+.clock-date {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+  letter-spacing: 2px;
+  font-weight: bold;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-color: rgb(var(--accent-rgb));
+  -webkit-text-stroke-width: 0.5px;
+}
+
+/* Search Bar Component */
+.search-container {
+  width: 100%;
+  max-width: 580px;
+  position: relative;
+  margin-top: 100px;
+}
+
+.search-box {
+  width: 100%;
+  height: 52px;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+  border-radius: 16px;
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all var(--transition-normal);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.search-box:focus-within, .search-box:hover {
+  box-shadow: 0 100px 500px 0 rgb(var(--accent-rgb));
+  border-color: rgba(var(--accent-rgb), 0.5);
+  transform: translateY(-5px);
+}
+
+.search-engine-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 8px;
+  transition: background var(--transition-fast);
+}
+
+.search-engine-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.search-engine-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-main);
+  font-size: 1.05rem;
+  color: #ffffff;
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.search-submit-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  border-radius: 8px;
+  transition: all var(--transition-fast);
+}
+
+.search-submit-btn:hover {
+  color: rgb(var(--accent-rgb));
+  transform: scale(1.1);
+}
+
+/* Bottom Footer Bar */
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+}
+
+/* Dynamic Weather Greeting Widget */
+.greeting-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
+  max-width: 450px;
+}
+
+.greeting-heading {
+  font-family: var(--font-script);
+  font-size: 4.2rem;
+  font-weight: 400;
+  line-height: 1;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.greeting-subtext {
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.weather-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.weather-badge:hover {
+  background: rgba(var(--accent-rgb), 0.2);
+  border-color: rgba(var(--accent-rgb), 0.4);
+  transform: scale(1.04);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

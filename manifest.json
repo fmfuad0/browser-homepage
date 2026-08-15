@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Aesthetic Homepage & New Tab",
+  "version": "1.0.0",
+  "description": "Personalized custom homepage and new tab page featuring live wallpapers, real-time weather greetings, time widget, and bookmarks tree drawer.",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "permissions": [
+    "storage",
+    "bookmarks"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "aesthetic-homepage@local.browser",
+      "strict_min_version": "109.0"
+    }
+  },
+  "icons": {
+    "128": "icon.svg"
+  },
+  "action": {
+    "default_title": "Open Aesthetic Homepage"
+  }
+}

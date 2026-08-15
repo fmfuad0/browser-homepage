@@ -1,0 +1,113 @@
+/* Shortcuts Launcher Grid */
+.shortcuts-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  max-width: 600px;
+  width: 100%;
+}
+
+.shortcut-card {
+  height: fit-content;
+  background: rgba(var(--accent-rgb), 0.1);
+  backdrop-filter: blur(1px);
+  border: 1px solid var(--glass-border);
+  border-radius: 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.65rem;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text-main);
+  position: relative;
+  transition: all var(--transition-normal);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.shortcut-card:hover {
+  border-color: rgba(var(--accent-rgb), 0.3);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(var(--accent-rgb), 0.15);
+  scale: 1.05;
+  transition-duration: 0.1s;
+}
+
+.shortcut-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.shortcut-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: none;
+}
+
+.shortcut-options-btn {
+  position: absolute;
+  top: 0px;
+  right: 5px;
+  width: 10px;
+  height: 20px;
+  font-weight: bold;
+  background: transparent;
+  border: 1px solid rgba(var(--accent-rgb), 0.5);
+  border-radius: 24px;
+  color: rgb(var(--accent-rgb));
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  opacity: 0;
+  rotate: 90deg;
+  transition: all var(--transition-fast);
+}
+
+.shortcut-card:hover .shortcut-options-btn {
+  opacity: 1;
+}
+
+.shortcut-options-btn:hover {
+  color: #ffffff;
+  background: rgba(var(--accent-rgb), 0.3);
+}
+
+/* Add Shortcut Tile */
+.shortcut-add-card {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.shortcut-add-card:hover {
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: rgb(var(--accent-rgb));
+  color: rgb(var(--accent-rgb));
+  transform: translateY(-4px) scale(1.03);
+}
+
+.shortcut-add-card svg {
+  width: 28px;
+  height: 28px;
+}

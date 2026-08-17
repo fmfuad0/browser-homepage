@@ -62,18 +62,19 @@ export class ShortcutsManager {
     this.container.innerHTML = '';
 
     // Render Shortcut Tiles
-    this.shortcuts.forEach(sc => {
+    this.shortcuts.forEach((sc, idx) => {
       const card = document.createElement('a');
-      card.className = 'shortcut-card fade-in';
+      card.className = 'shortcut-card';
+      card.style.animationDelay = `${(0.06 + Math.min(idx * 0.03, 0.15)).toFixed(2)}s`;
       card.href = sc.url;
       card.target = '_self';
       
       const faviconUrl = this.getFaviconUrl(sc.url, sc.icon);
 
       card.innerHTML = `
-        <button class="shortcut-options-btn" data-id="${sc.id}" title="Edit Shortcut">⋮</button>
+        <button class="shortcut-options-btn" data-id="${sc.id}" title="Edit Shortcut"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M416.9 85.2L372 130.1L509.9 268L554.8 223.1C568.4 209.6 576 191.2 576 172C576 152.8 568.4 134.4 554.8 120.9L519.1 85.2C505.6 71.6 487.2 64 468 64C448.8 64 430.4 71.6 416.9 85.2zM338.1 164L122.9 379.1C112.2 389.8 104.4 403.2 100.3 417.8L64.9 545.6C62.6 553.9 64.9 562.9 71.1 569C77.3 575.1 86.2 577.5 94.5 575.2L222.3 539.7C236.9 535.6 250.2 527.9 261 517.1L476 301.9L338.1 164z"/></svg></button>
         <div class="shortcut-icon-wrapper">
-          <img class="shortcut-icon" src="${faviconUrl}" alt="${sc.title}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'24\\' height=\\'24\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'white\\' stroke-width=\\'2\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/></svg>'"/>
+          <img class="shortcut-icon" decoding="async" loading="eager" src="${faviconUrl}" alt="${sc.title}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'24\\' height=\\'24\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'white\\' stroke-width=\\'2\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/></svg>'"/>
         </div>
         <span class="shortcut-title">${sc.title}</span>
       `;
@@ -91,7 +92,8 @@ export class ShortcutsManager {
 
     // Render '+' Add Card Tile
     const addCard = document.createElement('div');
-    addCard.className = 'shortcut-add-card fade-in';
+    addCard.className = 'shortcut-add-card';
+    addCard.style.animationDelay = `${(0.06 + Math.min(this.shortcuts.length * 0.03, 0.15)).toFixed(2)}s`;
     addCard.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
     `;
@@ -235,6 +237,7 @@ export class ShortcutsManager {
       });
     }
   }
+  
 
   removeShortcut(id) {
     this.shortcuts = this.shortcuts.filter(s => s.id !== id);

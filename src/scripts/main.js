@@ -7,19 +7,29 @@ import { WeatherGreetingService } from './weather.js';
 import { WallpaperEngine } from './wallpaper.js';
 import { ShortcutsManager } from './shortcuts.js';
 import { BookmarksDrawer } from './bookmarks.js';
+import { GoogleAppsMenu } from './googleApps.js';
 import { SearchManager } from './search.js';
 import { SettingsManager } from './settings.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
-  // Initialize Wallpaper & Audio Engine
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Wallpaper & Audio Engine (non-blocking)
   const wallpaperEngine = new WallpaperEngine({
     containerId: 'backgroundContainer',
     audioBtnId: 'audioToggleBtn',
     volumeSliderId: 'volumeSlider'
   });
-  await wallpaperEngine.init();
+  wallpaperEngine.init().catch(err => console.warn('Wallpaper init error:', err));
 
-  // Initialize Clock Widget
+  // Handle Tab Visibility Changes to pause/resume WebGL Shaders and save GPU/battery
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      wallpaperEngine.pauseShader();
+    } else {
+      wallpaperEngine.resumeShader();
+    }
+  });
+
+  // Initialize Clock Widget (instant synchronous)
   const is24h = localStorage.getItem('clock_24h') === 'true';
   const clockWidget = new ClockWidget({
     timeId: 'clockTime',
@@ -29,15 +39,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   clockWidget.start();
 
-  // Initialize Weather Greeting Service
+  // Initialize Weather Greeting Service (non-blocking, uses cached pre-data)
   const weatherService = new WeatherGreetingService({
     headingId: 'greetingHeading',
     subtextId: 'greetingSubtext',
     badgeId: 'weatherBadge'
   });
-  await weatherService.init();
+  weatherService.init().catch(err => console.warn('Weather init error:', err));
 
-  // Initialize Shortcuts Launcher
+  // Initialize Shortcuts Launcher (instant synchronous)
   const shortcutsManager = new ShortcutsManager({
     containerId: 'shortcutsContainer',
     modalId: 'addShortcutModal',
@@ -45,15 +55,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   shortcutsManager.init();
 
-  // Initialize Bookmarks Tree Drawer
-  const bookmarksDrawer = new BookmarksDrawer({
+  // Declare menu references for mutual exclusivity
+  let googleAppsMenu, bookmarksDrawer, settingsManager;
+
+  // Initialize Bookmarks Tree Popover
+  bookmarksDrawer = new BookmarksDrawer({
     drawerId: 'bookmarksDrawer',
     toggleBtnId: 'bookmarksToggleBtn',
     closeBtnId: 'closeBookmarksBtn',
     containerId: 'bookmarksTreeContainer',
-    searchId: 'bookmarksSearchInput'
+    searchId: 'bookmarksSearchInput',
+    onBeforeOpen: () => {
+      googleAppsMenu?.closePopover();
+      settingsManager?.close();
+    }
   });
-  await bookmarksDrawer.init();
+  bookmarksDrawer.init();
+
+  // Initialize Google Apps Popover Menu
+  googleAppsMenu = new GoogleAppsMenu({
+    toggleBtnId: 'googleAppsToggleBtn',
+    popoverId: 'googleAppsPopover',
+    onBeforeOpen: () => {
+      bookmarksDrawer?.close();
+      settingsManager?.close();
+    }
+  });
+  googleAppsMenu.init();
 
   // Initialize Search Manager
   const searchManager = new SearchManager({
@@ -65,16 +93,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   searchManager.init();
 
   // Initialize Settings Modal Controller
-  const settingsManager = new SettingsManager({
+  settingsManager = new SettingsManager({
     modalId: 'settingsModal',
     openBtnId: 'settingsToggleBtn',
     closeBtnId: 'closeSettingsBtn',
     wallpaperEngine,
     clockWidget,
     searchManager,
-    weatherService
+    weatherService,
+    onBeforeOpen: () => {
+      googleAppsMenu?.closePopover();
+      bookmarksDrawer?.close();
+    }
   });
   settingsManager.init();
 
-  console.log('✨ Aesthetic Browser Homepage initialized successfully.');
+  console.log('✨ Aesthetic Browser Homepage initialized instantly with optimized non-blocking engine.');
 });

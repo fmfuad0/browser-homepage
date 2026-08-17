@@ -1,6 +1,7 @@
 /**
- * Bookmarks Viewer & Tree Drawer Module
- * Instant synchronous loading + background extension sync + URL-specific favicon resolution
+ * Bookmarks Viewer & Popover Menu Module
+ * Converts bookmarks tree into a popover menu matching Google Apps UI with quick access grid,
+ * tree search, instant synchronous caching, and native extension sync.
  */
 
 export const DEFAULT_BOOKMARKS_TREE = [
@@ -8,14 +9,15 @@ export const DEFAULT_BOOKMARKS_TREE = [
     id: 'menu',
     title: 'Bookmarks Menu',
     children: [
-      { id: 'm1', title: 'Recent Tags', url: 'https://archive.org' }
+      { id: 'm1', title: 'Archive.org', url: 'https://archive.org' },
+      { id: 'm2', title: 'GitHub', url: 'https://github.com' }
     ]
   },
   {
     id: 'toolbar',
     title: 'Bookmarks Toolbar',
     children: [
-      { id: 't1', title: 'Most Visited', url: 'https://news.ycombinator.com' },
+      { id: 't1', title: 'Hacker News', url: 'https://news.ycombinator.com' },
       { id: 't2', title: 'Fedora Docs', url: 'https://docs.fedoraproject.org' },
       { id: 't3', title: 'Fedora Magazine', url: 'https://fedoramagazine.org' },
       {
@@ -38,14 +40,14 @@ export const DEFAULT_BOOKMARKS_TREE = [
         id: 't6',
         title: 'Red Hat',
         children: [
-          { id: 'rh1', title: 'Red Hat Customer Portal', url: 'https://access.redhat.com' }
+          { id: 'rh1', title: 'Red Hat Portal', url: 'https://access.redhat.com' }
         ]
       },
       {
         id: 't7',
         title: 'Free Content',
         children: [
-          { id: 'fc1', title: 'Wikipedia Free Encyclopedia', url: 'https://wikipedia.org' }
+          { id: 'fc1', title: 'Wikipedia', url: 'https://wikipedia.org' }
         ]
       }
     ]
@@ -54,11 +56,12 @@ export const DEFAULT_BOOKMARKS_TREE = [
 
 export class BookmarksDrawer {
   constructor(options = {}) {
-    this.drawerEl = document.getElementById(options.drawerId || 'bookmarksDrawer');
+    this.popoverEl = document.getElementById('bookmarksPopover');
     this.toggleBtn = document.getElementById(options.toggleBtnId || 'bookmarksToggleBtn');
-    this.closeBtn = document.getElementById(options.closeBtnId || 'closeBookmarksBtn');
     this.container = document.getElementById(options.containerId || 'bookmarksTreeContainer');
+    this.favoritesGridContainer = document.getElementById('bookmarksFavoritesGrid');
     this.searchInput = document.getElementById(options.searchId || 'bookmarksSearchInput');
+    this.onBeforeOpen = options.onBeforeOpen;
     
     this.isOpen = false;
     this.treeData = [];
@@ -80,11 +83,16 @@ export class BookmarksDrawer {
 
   setupEventListeners() {
     if (this.toggleBtn) {
-      this.toggleBtn.addEventListener('click', () => this.toggle());
+      this.toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggle();
+      });
     }
 
-    if (this.closeBtn) {
-      this.closeBtn.addEventListener('click', () => this.close());
+    if (this.popoverEl) {
+      this.popoverEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
     }
 
     if (this.searchInput) {
@@ -93,9 +101,16 @@ export class BookmarksDrawer {
       });
     }
 
-    // Close when clicking outside drawer
+    // Close when clicking outside popover
     document.addEventListener('click', (e) => {
-      if (this.isOpen && this.drawerEl && !this.drawerEl.contains(e.target) && !this.toggleBtn.contains(e.target)) {
+      if (this.isOpen && this.popoverEl && !this.popoverEl.contains(e.target) && !this.toggleBtn.contains(e.target)) {
+        this.close();
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.isOpen) {
         this.close();
       }
     });
@@ -115,16 +130,27 @@ export class BookmarksDrawer {
 
   toggle() {
     this.isOpen = !this.isOpen;
-    if (this.drawerEl) {
-      this.drawerEl.classList.toggle('open', this.isOpen);
+    if (this.isOpen) {
+      if (typeof this.onBeforeOpen === 'function') {
+        this.onBeforeOpen();
+      }
+      if (this.popoverEl) this.popoverEl.classList.add('active');
+      if (this.toggleBtn) this.toggleBtn.classList.add('active');
+      document.getElementById('rightControlsSidebar')?.classList.add('has-open-popover');
+    } else {
+      this.close();
     }
   }
 
   close() {
     this.isOpen = false;
-    if (this.drawerEl) {
-      this.drawerEl.classList.remove('open');
+    if (this.popoverEl) {
+      this.popoverEl.classList.remove('active');
     }
+    if (this.toggleBtn) {
+      this.toggleBtn.classList.remove('active');
+    }
+    document.getElementById('rightControlsSidebar')?.classList.remove('has-open-popover');
   }
 
   loadCachedBookmarks() {
@@ -156,11 +182,67 @@ export class BookmarksDrawer {
         this.render();
       }
     } catch (e) {
-      console.warn('Native extension bookmarks sync optional fallback', e);
+      console.warn('Native extension bookmarks sync fallback', e);
     }
   }
 
+  // Extract flat list of individual bookmark links for Quick Access grid
+  flattenBookmarks(nodes) {
+    let result = [];
+    nodes.forEach(node => {
+      if (node.url) {
+        result.push(node);
+      }
+      if (node.children && node.children.length > 0) {
+        result = result.concat(this.flattenBookmarks(node.children));
+      }
+    });
+    return result;
+  }
+
   render(filterText = '') {
+    this.renderQuickAccessGrid(filterText);
+    this.renderTreeView(filterText);
+  }
+
+  renderQuickAccessGrid(filterText = '') {
+    if (!this.favoritesGridContainer) return;
+    this.favoritesGridContainer.innerHTML = '';
+
+    let flatList = this.flattenBookmarks(this.treeData);
+    if (filterText) {
+      flatList = flatList.filter(bm => bm.title.toLowerCase().includes(filterText) || (bm.url && bm.url.toLowerCase().includes(filterText)));
+    }
+
+    const topItems = flatList.slice(0, 6);
+    const quickCard = document.getElementById('bookmarksQuickCard');
+    if (topItems.length === 0) {
+      if (quickCard) quickCard.style.display = 'none';
+      return;
+    }
+
+    if (quickCard) quickCard.style.display = 'block';
+
+    topItems.forEach(item => {
+      const faviconUrl = item.url ? `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(item.url)}&size=64` : '';
+      const anchor = document.createElement('a');
+      anchor.className = 'bm-grid-item';
+      anchor.href = item.url || '#';
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      anchor.title = item.title;
+
+      anchor.innerHTML = `
+        <div class="bm-grid-icon-wrapper">
+          <img class="bm-grid-icon" src="${faviconUrl}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'24\\' height=\\'24\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'white\\' stroke-width=\\'2\\'><path d=\\'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\\'/></svg>'"/>
+        </div>
+        <span class="bm-grid-label">${item.title}</span>
+      `;
+      this.favoritesGridContainer.appendChild(anchor);
+    });
+  }
+
+  renderTreeView(filterText = '') {
     if (!this.container) return;
     this.container.innerHTML = '';
 
@@ -193,7 +275,8 @@ export class BookmarksDrawer {
     item.className = 'bm-item';
     if (!isFolder) {
       item.href = node.url || '#';
-      item.target = '_self';
+      item.target = '_blank';
+      item.rel = 'noopener noreferrer';
     }
 
     let toggleIconHtml = '';
@@ -203,7 +286,7 @@ export class BookmarksDrawer {
       toggleIconHtml = `<span class="bm-toggle-icon expanded">❯</span>`;
       iconHtml = `<svg class="bm-icon bm-folder-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
     } else {
-      toggleIconHtml = `<span style="width:16px;"></span>`;
+      toggleIconHtml = `<span style="width:14px;"></span>`;
       const faviconUrl = node.url ? `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(node.url)}&size=32` : '';
       iconHtml = `<img class="bm-icon" src="${faviconUrl}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'16\\' height=\\'16\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'white\\' stroke-width=\\'2\\'><path d=\\'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\\'/></svg>'"/>`;
     }

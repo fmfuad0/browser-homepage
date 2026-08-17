@@ -58,13 +58,19 @@ export class SettingsManager {
     this.modalEl = document.getElementById(options.modalId || 'settingsModal');
     this.openBtn = document.getElementById(options.openBtnId || 'settingsToggleBtn');
     this.closeBtn = document.getElementById(options.closeBtnId || 'closeSettingsBtn');
-    
+
     this.wallpaperEngine = options.wallpaperEngine;
     this.clockWidget = options.clockWidget;
     this.searchManager = options.searchManager;
     this.weatherService = options.weatherService;
 
     this.citySearchTimeout = null;
+
+    // Track Object URLs created for gallery thumbnails to prevent memory leaks
+    this.galleryObjectUrls = [];
+    this.thumbObserver = null;
+
+    this.onBeforeOpen = options.onBeforeOpen;
   }
 
   init() {
@@ -75,7 +81,115 @@ export class SettingsManager {
     this.renderSearchEngineOptions();
     this.renderAccentColorSwatches();
     this.renderFontOptions();
+    this.initAutoHideRightMenu();
+    this.initShortcutBorderRadius();
+    this.initShortcutSize();
+    this.initHideShortcutTitle();
     this.syncFormState();
+  }
+
+  initAutoHideRightMenu() {
+    const isEnabled = localStorage.getItem('auto_hide_right_menu') === 'true';
+    document.documentElement.classList.toggle('auto-hide-right-menu', isEnabled);
+    document.body.classList.toggle('auto-hide-right-menu', isEnabled);
+
+    const toggleInput = document.getElementById('autoHideRightMenuToggle');
+    if (toggleInput) {
+      toggleInput.checked = isEnabled;
+      toggleInput.addEventListener('change', (e) => {
+        const val = e.target.checked;
+        localStorage.setItem('auto_hide_right_menu', val);
+        document.documentElement.classList.toggle('auto-hide-right-menu', val);
+        document.body.classList.toggle('auto-hide-right-menu', val);
+      });
+    }
+  }
+
+  initShortcutBorderRadius() {
+    const savedRadius = localStorage.getItem('shortcut_icon_border_radius') || '20%';
+    this.setShortcutBorderRadius(savedRadius);
+
+    const radiusGroup = document.getElementById('shortcutRadiusOptions');
+    if (radiusGroup) {
+      const btns = radiusGroup.querySelectorAll('.radius-btn');
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.dataset.radius;
+          this.setShortcutBorderRadius(val);
+        });
+      });
+    }
+  }
+
+  initShortcutSize() {
+    const savedSize = localStorage.getItem('shortcut_card_size') || '70px';
+    this.setShortcutSize(savedSize);
+
+    const sizeGroup = document.getElementById('shortcutSizeOptions');
+    if (sizeGroup) {
+      const btns = sizeGroup.querySelectorAll('.size-btn');
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.dataset.size;
+          this.setShortcutSize(val);
+        });
+      });
+    }
+  }
+
+  setShortcutSize(val) {
+    const sizeMap = {
+      '56px': { icon: '28px', font: '0.68rem', padding: '0.35rem 0.2rem', gap: '0.15rem' },
+      '70px': { icon: '36px', font: '0.78rem', padding: '0.45rem 0.3rem', gap: '0.25rem' },
+      '84px': { icon: '44px', font: '0.85rem', padding: '0.55rem 0.4rem', gap: '0.3rem' },
+      '98px': { icon: '52px', font: '0.92rem', padding: '0.65rem 0.5rem', gap: '0.35rem' }
+    };
+    const preset = sizeMap[val] || sizeMap['70px'];
+
+    document.documentElement.style.setProperty('--shortcut-card-size', val);
+    document.documentElement.style.setProperty('--shortcut-icon-size', preset.icon);
+    document.documentElement.style.setProperty('--shortcut-font-size', preset.font);
+    document.documentElement.style.setProperty('--shortcut-card-padding', preset.padding);
+    document.documentElement.style.setProperty('--shortcut-card-gap', preset.gap);
+    localStorage.setItem('shortcut_card_size', val);
+
+    const sizeGroup = document.getElementById('shortcutSizeOptions');
+    if (sizeGroup) {
+      const btns = sizeGroup.querySelectorAll('.size-btn');
+      btns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.size === val);
+      });
+    }
+  }
+
+  initHideShortcutTitle() {
+    const isHidden = localStorage.getItem('hideShortcutTitle') === 'true';
+    document.documentElement.classList.toggle('hide-shortcut-titles', isHidden);
+    document.body.classList.toggle('hide-shortcut-titles', isHidden);
+
+    const toggleInput = document.getElementById('hideShortcutTitleToggle');
+    if (toggleInput) {
+      toggleInput.checked = isHidden;
+      toggleInput.addEventListener('change', (e) => {
+        const val = e.target.checked;
+        localStorage.setItem('hideShortcutTitle', val);
+        document.documentElement.classList.toggle('hide-shortcut-titles', val);
+        document.body.classList.toggle('hide-shortcut-titles', val);
+      });
+    }
+  }
+
+  setShortcutBorderRadius(val) {
+    document.documentElement.style.setProperty('--shortcut-icon-border-radius', val);
+    localStorage.setItem('shortcut_icon_border_radius', val);
+
+    const radiusGroup = document.getElementById('shortcutRadiusOptions');
+    if (radiusGroup) {
+      const btns = radiusGroup.querySelectorAll('.radius-btn');
+      btns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.radius === val);
+      });
+    }
   }
 
   initAccentColor() {
@@ -92,11 +206,9 @@ export class SettingsManager {
   }
 
   initTypography() {
-    // Load custom fonts
     const customFonts = this.getCustomImportedFonts();
     customFonts.forEach(f => injectGoogleFont(f));
 
-    // Load presets
     PRESET_FONTS.forEach(p => {
       if (p.googleName) injectGoogleFont(p.googleName);
     });
@@ -164,6 +276,8 @@ export class SettingsManager {
 
     if (tabId === 'wallpaper') {
       this.renderWallpaperOptions();
+    } else {
+      this.cleanupWallpaperGallery();
     }
   }
 
@@ -233,7 +347,6 @@ export class SettingsManager {
         const query = customFontInput.value.trim();
         if (!query) return;
 
-        // Parse name from URL or raw name e.g. "Poppins" or "family=Poppins:wght..."
         let fontName = query;
         if (query.includes('family=')) {
           const match = query.match(/family=([^&:]+)/);
@@ -286,7 +399,7 @@ export class SettingsManager {
       cityInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
         if (this.citySearchTimeout) clearTimeout(this.citySearchTimeout);
-        
+
         if (query.length < 2) {
           cityResults.style.display = 'none';
           cityResults.innerHTML = '';
@@ -317,7 +430,6 @@ export class SettingsManager {
         }, 300);
       });
 
-      // Hide results when clicking outside
       document.addEventListener('click', (e) => {
         if (!cityInput.contains(e.target) && !cityResults.contains(e.target)) {
           cityResults.style.display = 'none';
@@ -362,19 +474,40 @@ export class SettingsManager {
     if (folderInput) {
       folderInput.addEventListener('change', async (e) => {
         if (e.target.files.length > 0 && this.wallpaperEngine) {
-          await this.wallpaperEngine.saveCustomFiles(e.target.files);
-          await this.renderWallpaperOptions();
+          try {
+            const records = await this.wallpaperEngine.saveCustomFiles(e.target.files);
+            if (records && records.length > 0) {
+              const newestId = records[records.length - 1].id;
+              await this.wallpaperEngine.loadCustomWallpaperFromDB(newestId);
+            }
+            await this.renderWallpaperOptions();
+          } catch (err) {
+            console.error('Failed to process folder wallpapers:', err);
+          }
         }
       });
     }
 
     // Custom Files Upload Input
     const uploadInput = document.getElementById('customWallpaperInput');
+    const addFilesBtn = document.getElementById('addFilesBtn');
+    
+    if (addFilesBtn && uploadInput) {
+      addFilesBtn.addEventListener('click', (e) => {
+        // Fallback for browsers requiring explicit click dispatch
+        uploadInput.click();
+      });
+    }
+
     if (uploadInput) {
       uploadInput.addEventListener('change', async (e) => {
         if (e.target.files.length > 0 && this.wallpaperEngine) {
           try {
-            await this.wallpaperEngine.saveCustomFiles(e.target.files);
+            const records = await this.wallpaperEngine.saveCustomFiles(e.target.files);
+            if (records && records.length > 0) {
+              const newestId = records[records.length - 1].id;
+              await this.wallpaperEngine.loadCustomWallpaperFromDB(newestId);
+            }
             await this.renderWallpaperOptions();
           } catch (err) {
             console.error('Failed to upload custom wallpapers:', err);
@@ -431,16 +564,50 @@ export class SettingsManager {
   }
 
   open() {
+    if (typeof this.onBeforeOpen === 'function') {
+      this.onBeforeOpen();
+    }
     if (this.modalEl) {
       this.modalEl.classList.add('open');
       this.syncFormState();
-      this.renderWallpaperOptions(); // Lazy render gallery on open to ensure fast load
+      const activeTab = localStorage.getItem('active_settings_tab') || 'appearance';
+      if (activeTab === 'wallpaper') {
+        this.renderWallpaperOptions();
+      }
+      if (this.wallpaperEngine) {
+        this.wallpaperEngine.pauseShader();
+      }
     }
   }
 
   close() {
     if (this.modalEl) {
       this.modalEl.classList.remove('open');
+      this.cleanupWallpaperGallery();
+      if (this.wallpaperEngine) {
+        this.wallpaperEngine.resumeShader();
+      }
+    }
+  }
+
+  cleanupWallpaperGallery() {
+    if (this.thumbObserver) {
+      this.thumbObserver.disconnect();
+      this.thumbObserver = null;
+    }
+    const grid = document.getElementById('wallpaperGrid');
+    if (grid) {
+      const videos = grid.querySelectorAll('video');
+      videos.forEach(v => {
+        v.pause();
+        v.removeAttribute('src');
+        v.load();
+      });
+      grid.innerHTML = '';
+    }
+    if (this.galleryObjectUrls && this.galleryObjectUrls.length > 0) {
+      this.galleryObjectUrls.forEach(url => URL.revokeObjectURL(url));
+      this.galleryObjectUrls = [];
     }
   }
 
@@ -480,11 +647,11 @@ export class SettingsManager {
     const badge = document.getElementById('wallpaperCountBadge');
     const clearBtn = document.getElementById('clearCustomGalleryBtn');
     if (!grid) return;
-    grid.innerHTML = '';
 
-    const activeId = localStorage.getItem('active_wallpaper_id') || 'lofi-room';
+    this.cleanupWallpaperGallery();
 
-    // Fetch custom wallpapers from IndexedDB
+    const activeId = localStorage.getItem('active_wallpaper_id') || 'shader-aurora';
+
     let customWallpapers = [];
     if (this.wallpaperEngine) {
       customWallpapers = await this.wallpaperEngine.getAllCustomWallpapers();
@@ -503,37 +670,77 @@ export class SettingsManager {
       clearBtn.style.display = customWallpapers.length > 0 ? 'flex' : 'none';
     }
 
-    // IntersectionObserver for ultra-fast lazy video thumbnail loading
     const observerOptions = {
       root: grid,
       rootMargin: '50px',
       threshold: 0.1
     };
 
-    const mediaObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach(entry => {
+    this.thumbObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(async (entry) => {
         if (entry.isIntersecting) {
-          const mediaEl = entry.target.querySelector('[data-src]');
-          if (mediaEl) {
-            mediaEl.src = mediaEl.dataset.src;
-            delete mediaEl.dataset.src;
+          const thumb = entry.target;
+          observer.unobserve(thumb);
+
+          const wpId = thumb.dataset.wpId;
+          const isVideo = thumb.dataset.isVideo === 'true';
+          const isCustom = wpId.startsWith('custom-');
+          const mediaEl = thumb.querySelector('.wallpaper-thumb-media');
+
+          if (!mediaEl) return;
+
+          let mediaSrc = thumb.dataset.presetUrl || '';
+
+          if (isCustom && this.wallpaperEngine) {
+            const customWp = await this.wallpaperEngine.getCustomWallpaperById(wpId);
+            if (customWp) {
+              // For video: use thumbnailBlob (static JPEG frame) – no video decoding lag
+              // For image: use the full blob
+              const previewBlob = isVideo ? customWp.thumbnailBlob : customWp.blob;
+
+              if (!previewBlob && customWp.handle && !isVideo) {
+                // Fallback to file handle for images only
+                try {
+                  const perm = await customWp.handle.queryPermission({ mode: 'read' });
+                  if (perm === 'granted') {
+                    const file = await customWp.handle.getFile();
+                    const objectUrl = URL.createObjectURL(file);
+                    this.galleryObjectUrls.push(objectUrl);
+                    mediaSrc = objectUrl;
+                  }
+                } catch (e) {}
+              } else if (previewBlob) {
+                const objectUrl = URL.createObjectURL(previewBlob);
+                this.galleryObjectUrls.push(objectUrl);
+                mediaSrc = objectUrl;
+              }
+            }
           }
-          observer.unobserve(entry.target);
+
+          if (mediaSrc) {
+            mediaEl.src = mediaSrc;
+          }
         }
       });
     }, observerOptions);
 
     allWallpapers.forEach(wp => {
       const isCustom = wp.id.startsWith('custom-');
+      const isVideo = wp.type === 'video';
+      const isShader = wp.type === 'shader';
+
       const thumb = document.createElement('div');
       thumb.className = `wallpaper-thumb ${wp.id === activeId ? 'active' : ''}`;
-      
-      const isVideo = wp.type === 'video';
+      thumb.dataset.wpId = wp.id;
+      thumb.dataset.isVideo = isVideo ? 'true' : 'false';
+      if (!isCustom && !isShader) {
+        thumb.dataset.presetUrl = wp.url || '';
+      }
 
       // Type Badge
       const typeBadge = document.createElement('span');
-      typeBadge.className = `wallpaper-type-badge ${isVideo ? 'video-badge' : ''}`;
-      typeBadge.textContent = isVideo ? 'VIDEO' : 'IMG';
+      typeBadge.className = `wallpaper-type-badge ${isShader ? 'shader-badge' : isVideo ? 'video-badge' : ''}`;
+      typeBadge.textContent = isShader ? 'SHADER' : isVideo ? 'VIDEO' : 'IMG';
       thumb.appendChild(typeBadge);
 
       // Delete Button for Custom Wallpapers
@@ -542,7 +749,7 @@ export class SettingsManager {
         deleteBtn.className = 'wallpaper-delete-btn';
         deleteBtn.title = 'Remove wallpaper';
         deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-        
+
         deleteBtn.addEventListener('click', async (e) => {
           e.stopPropagation();
           if (this.wallpaperEngine) {
@@ -553,58 +760,32 @@ export class SettingsManager {
         thumb.appendChild(deleteBtn);
       }
 
-      // Media Element / Background
-      let mediaSrc = wp.url;
-      if (isCustom && wp.blob) {
-        mediaSrc = URL.createObjectURL(wp.blob);
-      } else if (isCustom && wp.handle) {
-        // Will load when clicked or observed
-        mediaSrc = '';
-      }
-
-      if (isVideo) {
-        const videoEl = document.createElement('video');
-        videoEl.className = 'wallpaper-thumb-media';
-        videoEl.muted = true;
-        videoEl.loop = true;
-        videoEl.playsInline = true;
-        videoEl.preload = 'metadata';
-
-        if (wp.poster) videoEl.poster = wp.poster;
-
-        if (mediaSrc) {
-          videoEl.dataset.src = mediaSrc + '#t=0.5';
-        } else if (isCustom && wp.handle) {
-          // Lazy resolve handle when observed
-          thumb.dataset.needsHandle = 'true';
-        }
-
-        thumb.appendChild(videoEl);
-
-        // Hover play preview effect
-        thumb.addEventListener('mouseenter', () => {
-          if (videoEl.src && videoEl.readyState >= 1) {
-            videoEl.play().catch(() => {});
-          }
-        });
-
-        thumb.addEventListener('mouseleave', () => {
-          if (videoEl.src) {
-            videoEl.pause();
-            videoEl.currentTime = 0.5;
-          }
-        });
+      if (isShader) {
+        const previewEl = document.createElement('div');
+        previewEl.className = `wallpaper-thumb-shader-preview ${wp.shaderKey || 'aurora'}`;
+        thumb.appendChild(previewEl);
       } else {
+        // Use a static <img> for both images and video thumbnails (no lag)
         const imgEl = document.createElement('img');
         imgEl.className = 'wallpaper-thumb-media';
         imgEl.alt = wp.name || 'Wallpaper';
         imgEl.loading = 'lazy';
+        imgEl.decoding = 'async';
 
-        if (mediaSrc) {
-          imgEl.dataset.src = mediaSrc;
+        // For preset images use poster as placeholder while lazy-loading
+        if (!isCustom && wp.poster) {
+          imgEl.src = wp.poster;
         }
 
         thumb.appendChild(imgEl);
+
+        // Play icon overlay for video wallpapers
+        if (isVideo) {
+          const playIcon = document.createElement('div');
+          playIcon.className = 'wallpaper-thumb-play-icon';
+          playIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>`;
+          thumb.appendChild(playIcon);
+        }
       }
 
       // Label
@@ -626,7 +807,9 @@ export class SettingsManager {
       });
 
       grid.appendChild(thumb);
-      mediaObserver.observe(thumb);
+      if (!isShader) {
+        this.thumbObserver.observe(thumb);
+      }
     });
   }
 
@@ -644,7 +827,6 @@ export class SettingsManager {
     const currentClockFont = localStorage.getItem('clock_font_family') || "'Outfit', sans-serif";
     const currentGreetingFont = localStorage.getItem('greeting_font_family') || "'Great Vibes', cursive";
 
-    // Combine preset & custom fonts
     const fontOptions = [
       ...PRESET_FONTS.map(p => ({ label: p.name, value: p.family })),
       ...customFonts.map(f => ({ label: `${f} (Custom Online)`, value: `'${f}', sans-serif` }))
@@ -672,7 +854,6 @@ export class SettingsManager {
       });
     }
 
-    // Render Custom Fonts Chips
     if (chipsContainer) {
       chipsContainer.innerHTML = '';
       customFonts.forEach(fontName => {
@@ -754,4 +935,3 @@ export class SettingsManager {
     this.renderFontOptions();
   }
 }
-

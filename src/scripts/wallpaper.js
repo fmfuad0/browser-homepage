@@ -1,24 +1,41 @@
 /**
  * Wallpaper & Audio Engine
- * Supports video loops, static images, ambient audio, and persistent custom uploads using IndexedDB.
+ * Supports high-performance WebGL procedural shaders, video loops, static images, ambient audio,
+ * and persistent custom uploads using IndexedDB.
  */
+
+import { ShaderEngine } from './shaderEngine.js';
+
+export const MAX_CUSTOM_WALLPAPERS = 50;
 
 export const PRESET_WALLPAPERS = [
   {
-    id: 'lofi-room',
-    name: 'Cozy Lo-Fi Room',
-    type: 'video',
-    url: 'https://assets.mixkit.co/videos/preview/mixkit-cozy-living-room-with-a-fireplace-at-night-42864-large.mp4',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3',
-    poster: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=1200&q=80'
+    id: 'shader-aurora',
+    name: 'Cosmic Aurora',
+    type: 'shader',
+    shaderKey: 'aurora',
+    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3'
   },
   {
-    id: 'cyberpunk-city',
+    id: 'shader-rain',
     name: 'Cyberpunk Rain',
-    type: 'video',
-    url: 'https://assets.mixkit.co/videos/preview/mixkit-rain-drops-on-a-window-pane-at-night-41544-large.mp4',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2021/09/06/audio_8b7e28ff0b.mp3?filename=rain-and-thunder-16705.mp3',
-    poster: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1200&q=80'
+    type: 'shader',
+    shaderKey: 'rain',
+    audioUrl: 'https://cdn.pixabay.com/download/audio/2021/09/06/audio_8b7e28ff0b.mp3?filename=rain-and-thunder-16705.mp3'
+  },
+  {
+    id: 'shader-embers',
+    name: 'Cozy Fireplace',
+    type: 'shader',
+    shaderKey: 'embers',
+    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3'
+  },
+  {
+    id: 'shader-stars',
+    name: 'Deep Space Stars',
+    type: 'shader',
+    shaderKey: 'stars',
+    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=forest-birds-109033.mp3'
   },
   {
     id: 'serene-nature',
@@ -36,6 +53,7 @@ export class WallpaperEngine {
     this.audioBtn = document.getElementById(options.audioBtnId || 'audioToggleBtn');
     this.volumeSlider = document.getElementById(options.volumeSliderId || 'volumeSlider');
     this.bgMediaEl = null;
+    this.shaderEngine = null;
 
     this.audioEl = new Audio();
     this.audioEl.loop = true;
@@ -43,22 +61,21 @@ export class WallpaperEngine {
 
     this.activeWallpaper = null;
     this.db = null;
-    this.customObjectUrl = null;
+
+    // Track active blob URL for custom wallpapers to prevent leaks
+    this.activeObjectUrl = null;
   }
 
   async init() {
     this.setupEventListeners();
-    const savedId = localStorage.getItem('active_wallpaper_id') || 'lofi-room';
-    
-    // Load preset wallpaper instantly first for zero page load latency
-    this.loadPresetWallpaper(savedId);
+    const savedId = localStorage.getItem('active_wallpaper_id') || 'shader-aurora';
 
-    // Initialize DB asynchronously for custom wallpapers without blocking main thread
-    this.initDB().then(async () => {
-      if (savedId.startsWith('custom-')) {
-        await this.loadCustomWallpaperFromDB(savedId);
-      }
-    });
+    if (!savedId.startsWith('custom-')) {
+      this.loadPresetWallpaper(savedId);
+      this.initDB().catch(() => {});
+    } else {
+      this.initDB().then(() => this.loadCustomWallpaperFromDB(savedId)).catch(err => console.warn('Custom wallpaper IDB error:', err));
+    }
   }
 
   initDB() {
@@ -120,20 +137,12 @@ export class WallpaperEngine {
     if (!this.db) await this.initDB();
     if (!this.db) return;
 
-    const customWp = await new Promise((resolve) => {
-      const tx = this.db.transaction('wallpapers', 'readonly');
-      const store = tx.objectStore('wallpapers');
-      const req = store.get(id);
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = () => resolve(null);
-    });
-
+    const customWp = await this._dbGet('wallpapers', id);
     if (!customWp) return;
 
     try {
       let fileBlob = customWp.blob;
       if (!fileBlob && customWp.handle) {
-        // If handle permission is needed, query/request permission
         const perm = await customWp.handle.queryPermission({ mode: 'read' });
         if (perm === 'granted' || (await customWp.handle.requestPermission({ mode: 'read' })) === 'granted') {
           fileBlob = await customWp.handle.getFile();
@@ -141,14 +150,12 @@ export class WallpaperEngine {
       }
 
       if (fileBlob) {
-        if (this.customObjectUrl) {
-          URL.revokeObjectURL(this.customObjectUrl);
+        if (this.activeObjectUrl) {
+          URL.revokeObjectURL(this.activeObjectUrl);
+          this.activeObjectUrl = null;
         }
-        this.customObjectUrl = URL.createObjectURL(fileBlob);
-        const resolvedWp = {
-          ...customWp,
-          url: this.customObjectUrl
-        };
+        this.activeObjectUrl = URL.createObjectURL(fileBlob);
+        const resolvedWp = { ...customWp, url: this.activeObjectUrl };
         this.applyWallpaper(resolvedWp);
       }
     } catch (err) {
@@ -160,9 +167,29 @@ export class WallpaperEngine {
     this.activeWallpaper = wp;
     localStorage.setItem('active_wallpaper_id', wp.id);
 
+    // Clean up active shader engine if present
+    if (this.shaderEngine) {
+      this.shaderEngine.destroy();
+      this.shaderEngine = null;
+    }
+
+    // Release background video resources if previously present
+    if (this.bgMediaEl && this.bgMediaEl.tagName === 'VIDEO') {
+      this.bgMediaEl.pause();
+      this.bgMediaEl.removeAttribute('src');
+      this.bgMediaEl.load();
+    }
     this.container.innerHTML = '';
 
-    if (wp.type === 'video') {
+    if (wp.type === 'shader') {
+      this.shaderEngine = new ShaderEngine(this.container);
+      const success = this.shaderEngine.init(wp.shaderKey || 'aurora');
+      if (!success) {
+        // Fallback to image preset if WebGL is unavailable
+        this.loadPresetWallpaper('serene-nature');
+        return;
+      }
+    } else if (wp.type === 'video') {
       const video = document.createElement('video');
       video.className = 'background-media';
       video.id = 'bgMedia';
@@ -172,7 +199,7 @@ export class WallpaperEngine {
       video.playsInline = true;
       video.src = wp.url;
       if (wp.poster) video.poster = wp.poster;
-      
+
       this.container.appendChild(video);
       this.bgMediaEl = video;
     } else {
@@ -181,7 +208,7 @@ export class WallpaperEngine {
       img.id = 'bgMedia';
       img.src = wp.url;
       img.alt = 'Wallpaper';
-      
+
       this.container.appendChild(img);
       this.bgMediaEl = img;
     }
@@ -192,15 +219,25 @@ export class WallpaperEngine {
       this.audioEl.src = '';
     }
 
-    // Re-apply focus blur settings if applicable
     const focusBlur = localStorage.getItem('search_focus_blur') || '12';
     document.documentElement.style.setProperty('--search-blur-amount', `${focusBlur}px`);
   }
 
-  // Utility to determine media type from extension or mime
+  pauseShader() {
+    if (this.shaderEngine) {
+      this.shaderEngine.pause();
+    }
+  }
+
+  resumeShader() {
+    if (this.shaderEngine && this.activeWallpaper && this.activeWallpaper.type === 'shader') {
+      this.shaderEngine.resume();
+    }
+  }
+
   static isSupportedMedia(filename, mimeType = '') {
     const ext = filename.split('.').pop().toLowerCase();
-    const videoExts = ['mp4', 'webm', 'ogv', 'mov', 'm4v', 'mkv'];
+    const videoExts = ['mp4', 'webm', 'ogv', 'mov', 'm4v'];
     const imageExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'svg'];
 
     if (mimeType.startsWith('video/') || videoExts.includes(ext)) {
@@ -212,11 +249,57 @@ export class WallpaperEngine {
     return { supported: false, type: null };
   }
 
+  /**
+   * Generate a JPEG thumbnail blob from a video file by seeking to 0.5s.
+   * Returns a Blob or null if generation fails.
+   */
+  static generateVideoThumbnail(videoFile) {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(videoFile);
+      const video = document.createElement('video');
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = 'metadata';
+      video.src = url;
+
+      const cleanup = () => URL.revokeObjectURL(url);
+
+      video.addEventListener('loadeddata', () => {
+        video.currentTime = Math.min(0.5, video.duration || 0);
+      }, { once: true });
+
+      video.addEventListener('seeked', () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const maxW = 320;
+          const scale = Math.min(1, maxW / (video.videoWidth || maxW));
+          canvas.width = Math.round((video.videoWidth || maxW) * scale);
+          canvas.height = Math.round((video.videoHeight || 180) * scale);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => { cleanup(); resolve(blob); }, 'image/jpeg', 0.8);
+        } catch (e) {
+          cleanup();
+          resolve(null);
+        }
+      }, { once: true });
+
+      video.addEventListener('error', () => { cleanup(); resolve(null); }, { once: true });
+      video.load();
+    });
+  }
+
   async saveCustomWallpaper(file) {
     const media = WallpaperEngine.isSupportedMedia(file.name, file.type);
     if (!media.supported) return null;
     if (!this.db) await this.initDB();
     if (!this.db) return null;
+
+    const existing = await this.getCustomWallpaperCount();
+    if (existing >= MAX_CUSTOM_WALLPAPERS) {
+      console.warn(`Maximum of ${MAX_CUSTOM_WALLPAPERS} custom wallpapers reached.`);
+      return null;
+    }
 
     const wpRecord = {
       id: 'custom-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
@@ -226,14 +309,12 @@ export class WallpaperEngine {
       timestamp: Date.now()
     };
 
-    await new Promise((resolve, reject) => {
-      const tx = this.db.transaction('wallpapers', 'readwrite');
-      const store = tx.objectStore('wallpapers');
-      const req = store.put(wpRecord);
-      req.onsuccess = () => resolve(true);
-      req.onerror = (e) => reject(e);
-    });
+    if (media.type === 'video') {
+      const thumb = await WallpaperEngine.generateVideoThumbnail(file);
+      if (thumb) wpRecord.thumbnailBlob = thumb;
+    }
 
+    await this._dbPut('wallpapers', wpRecord);
     await this.loadCustomWallpaperFromDB(wpRecord.id);
     return wpRecord;
   }
@@ -245,17 +326,31 @@ export class WallpaperEngine {
     const fileArray = Array.from(files);
     const validRecords = [];
 
-    for (let i = 0; i < fileArray.length; i++) {
-      const file = fileArray[i];
+    const existing = await this.getCustomWallpaperCount();
+    const remaining = MAX_CUSTOM_WALLPAPERS - existing;
+    if (remaining <= 0) {
+      alert(`Maximum of ${MAX_CUSTOM_WALLPAPERS} custom wallpapers reached. Remove some before adding more.`);
+      return [];
+    }
+
+    const toProcess = fileArray.slice(0, remaining);
+
+    for (let i = 0; i < toProcess.length; i++) {
+      const file = toProcess[i];
       const media = WallpaperEngine.isSupportedMedia(file.name, file.type);
       if (media.supported) {
-        validRecords.push({
+        const record = {
           id: 'custom-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substring(2, 6),
           name: file.name,
           type: media.type,
           blob: file,
           timestamp: Date.now()
-        });
+        };
+        if (media.type === 'video') {
+          const thumb = await WallpaperEngine.generateVideoThumbnail(file);
+          if (thumb) record.thumbnailBlob = thumb;
+        }
+        validRecords.push(record);
       }
     }
 
@@ -276,21 +371,28 @@ export class WallpaperEngine {
     if (!this.db) await this.initDB();
     if (!this.db) return [];
 
+    const existing = await this.getCustomWallpaperCount();
+    const remaining = MAX_CUSTOM_WALLPAPERS - existing;
+    if (remaining <= 0) {
+      alert(`Maximum of ${MAX_CUSTOM_WALLPAPERS} custom wallpapers reached. Remove some before adding more.`);
+      return [];
+    }
+
     const validRecords = [];
     let counter = 0;
 
     const scanDir = async (handle) => {
       for await (const entry of handle.values()) {
+        if (validRecords.length >= remaining) break;
+
         if (entry.kind === 'file') {
           const media = WallpaperEngine.isSupportedMedia(entry.name);
           if (media.supported) {
             try {
-              const file = await entry.getFile();
               validRecords.push({
                 id: 'custom-' + Date.now() + '-' + (counter++) + '-' + Math.random().toString(36).substring(2, 6),
                 name: entry.name,
                 type: media.type,
-                blob: file,
                 handle: entry,
                 timestamp: Date.now()
               });
@@ -299,7 +401,6 @@ export class WallpaperEngine {
             }
           }
         } else if (entry.kind === 'directory') {
-          // Scan top-level subdirectories as well
           await scanDir(entry);
         }
       }
@@ -328,8 +429,38 @@ export class WallpaperEngine {
       const tx = this.db.transaction('wallpapers', 'readonly');
       const store = tx.objectStore('wallpapers');
       const req = store.getAll();
-      req.onsuccess = () => resolve(req.result || []);
+      req.onsuccess = () => {
+        const results = (req.result || []).map(wp => {
+          const { blob, thumbnailBlob, ...meta } = wp;
+          if (wp.type === 'image' && blob) {
+            return { ...meta, blob };
+          }
+          if (wp.type === 'video' && thumbnailBlob) {
+            return { ...meta, thumbnailBlob };
+          }
+          return meta;
+        });
+        resolve(results);
+      };
       req.onerror = () => resolve([]);
+    });
+  }
+
+  async getCustomWallpaperById(id) {
+    if (!this.db) await this.initDB();
+    if (!this.db) return null;
+    return this._dbGet('wallpapers', id);
+  }
+
+  async getCustomWallpaperCount() {
+    if (!this.db) await this.initDB();
+    if (!this.db) return 0;
+    return new Promise((resolve) => {
+      const tx = this.db.transaction('wallpapers', 'readonly');
+      const store = tx.objectStore('wallpapers');
+      const req = store.count();
+      req.onsuccess = () => resolve(req.result || 0);
+      req.onerror = () => resolve(0);
     });
   }
 
@@ -358,5 +489,24 @@ export class WallpaperEngine {
       req.onerror = () => resolve(false);
     });
   }
-}
 
+  _dbGet(storeName, key) {
+    return new Promise((resolve) => {
+      const tx = this.db.transaction(storeName, 'readonly');
+      const store = tx.objectStore(storeName);
+      const req = store.get(key);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  _dbPut(storeName, value) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const req = store.put(value);
+      req.onsuccess = () => resolve(true);
+      req.onerror = (e) => reject(e);
+    });
+  }
+}

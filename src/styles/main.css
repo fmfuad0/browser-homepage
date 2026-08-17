@@ -1,6 +1,4 @@
-/* Typography imports from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
-
+/* Global Theme Tokens */
 :root {
   --font-main: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-script: sans-serif;
@@ -33,12 +31,35 @@
   --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-* {
+
+*{
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* Global Accent Scrollbar — webkit */
+::-webkit-scrollbar {
+  width: 2px !important;
+  height: 2px !important;
+}
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--accent-rgb)) !important;
+  border-radius: 4px !important;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--accent-rgb)) !important;
+}
+
+/* Global Accent Scrollbar — standard (Firefox / Chrome 121+) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--accent-rgb)) transparent;
 }
 
 html, body {
@@ -109,21 +130,60 @@ body.search-focused .background-overlay {
   pointer-events: auto;
 }
 
-/* Independent Fixed Top Controls */
-.top-control-music {
+/* Invisible Right Edge Trigger Zone for Auto-hide Menu */
+.right-sidebar-trigger-zone {
   position: fixed;
-  top: 2rem;
-  left: 2.5rem;
-  z-index: 100;
+  top: 0;
+  right: 0;
+  width: 70px;
+  height: 100vh;
+  z-index: 98;
   pointer-events: auto;
+  display: none;
 }
 
-.top-control-bookmark {
+body.auto-hide-right-menu .right-sidebar-trigger-zone,
+html.auto-hide-right-menu .right-sidebar-trigger-zone {
+  display: block;
+}
+
+/* Vertically Centered Right Navigation Sidebar */
+.right-controls-sidebar {
   position: fixed;
-  top: 2rem;
-  right: 2.5rem;
+  right: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
   pointer-events: auto;
+  transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1), transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+body.auto-hide-right-menu .right-controls-sidebar,
+html.auto-hide-right-menu .right-controls-sidebar {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(24px);
+}
+
+body.auto-hide-right-menu .right-sidebar-trigger-zone:hover ~ .right-controls-sidebar,
+body.auto-hide-right-menu .right-controls-sidebar:hover,
+body.auto-hide-right-menu .right-controls-sidebar:focus-within,
+body.auto-hide-right-menu .right-controls-sidebar.has-open-popover,
+html.auto-hide-right-menu .right-sidebar-trigger-zone:hover ~ .right-controls-sidebar,
+html.auto-hide-right-menu .right-controls-sidebar:hover,
+html.auto-hide-right-menu .right-controls-sidebar:focus-within,
+html.auto-hide-right-menu .right-controls-sidebar.has-open-popover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+
+.right-control-item {
+  position: relative;
 }
 
 /* Icon Buttons */
@@ -136,6 +196,7 @@ body.search-focused .background-overlay {
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid rgba(var(--accent-rgb), 0.5);
   color: var(--accent-color);
+  fill: var(--accent-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -256,7 +317,7 @@ body.search-focused .background-overlay {
   font-weight: 600;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  background: linear-gradient(0deg, rgb(var(--accent-rgb), 0.5) 0%, transparent 80%);
+  background: linear-gradient(0deg, rgb(var(--accent-rgb), 0.5) 0%, transparent 60%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke-color: rgb(var(--accent-rgb));
@@ -313,7 +374,7 @@ body.search-focused .background-overlay {
 }
 
 .search-box:focus-within, .search-box:hover {
-  box-shadow: 0 100px 500px 0 rgb(var(--accent-rgb));
+  box-shadow: 0 100px 500px 0 rgb(var(--accent-rgb), 0.2);
   border-color: rgba(var(--accent-rgb), 0.5);
   transform: translateY(-5px);
 }
@@ -374,13 +435,6 @@ body.search-focused .background-overlay {
   transform: scale(1.1);
 }
 
-/* Bottom Footer Bar */
-.app-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  width: 100%;
-}
 
 /* Dynamic Weather Greeting Widget */
 .greeting-widget {
@@ -388,21 +442,22 @@ body.search-focused .background-overlay {
   flex-direction: column;
   gap: 0.25rem;
   /* text-shadow: 0 4px 16px rgba(0, 0, 0, 0.7); */
-  max-width: 600px;
+  max-width: 700px;
+  /* display: none; */
 }
 
 .greeting-heading {
   font-family: var(--greeting-font-family, var(--font-script));
-  font-size: 2.2rem;
+  font-size: 2rem;
   font-weight: 500;
   line-height: 1;
   letter-spacing: 2px;
-  background: linear-gradient(0deg, rgba(var(--accent-rgb), 0.5) 0%, transparent 100%);
+  background: linear-gradient(0deg, rgba(var(--accent-rgb), 0.6) 0%, transparent 60%);
   -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    -webkit-text-stroke-color: rgb(var(--accent-rgb));
-    -webkit-text-stroke-width: 0.5px;
-
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke-color: rgb(var(--accent-rgb));
+  -webkit-text-stroke-width: 0.6px;
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
 .greeting-subtext {
@@ -412,6 +467,13 @@ body.search-focused .background-overlay {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.greeting-heading.fade-transition,
+.greeting-subtext.fade-transition {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .weather-badge {
@@ -436,12 +498,77 @@ body.search-focused .background-overlay {
   transform: scale(1.04);
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Subtle & Smooth Page Load Entry Animations */
+@keyframes animHeroTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
+@keyframes animSearchBox {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes animGreetingBottom {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes animRightSidebarItem {
+  0% {
+    opacity: 0;
+    transform: translateX(18px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Subtle, smooth entry timing with light natural staggered flow */
+.clock-widget.fade-in {
+  animation: animHeroTop 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.02s both;
+}
+
+.search-container.fade-in {
+  animation: animSearchBox 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;
+}
+
+.greeting-widget.fade-in {
+  animation: animGreetingBottom 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+}
+
+.right-controls-sidebar .right-control-item {
+  animation: animRightSidebarItem 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.right-controls-sidebar .right-control-item:nth-child(1) { animation-delay: 0.08s; }
+.right-controls-sidebar .right-control-item:nth-child(2) { animation-delay: 0.12s; }
+.right-controls-sidebar .right-control-item:nth-child(3) { animation-delay: 0.16s; }
+
 .fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }

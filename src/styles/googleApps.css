@@ -1,0 +1,289 @@
+/* Google Apps Popover Menu Styling */
+
+/* Floating Popover Container */
+
+.google-apps-popover {
+  position: absolute;
+  top: 50%;
+  right: 58px;
+  width: 360px;
+  max-height: min(80vh, 620px);
+  /* background: rgba(30, 31, 34, 0.95); */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  padding: 1.25rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(12px, -50%) scale(0.96);
+  transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1),
+              transform 0.25s cubic-bezier(0.2, 0, 0, 1),
+              visibility 0.25s;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.google-apps-popover.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(0, -50%) scale(1);
+}
+
+/* Header Bar */
+.google-apps-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.2rem 0.25rem;
+}
+
+.google-apps-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.google-apps-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.google-apps-edit-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e3e3e3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.google-apps-edit-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.google-apps-edit-btn.active {
+  background: var(--accent-color);
+  color: #0d0f12;
+  border-color: var(--accent-color);
+}
+
+/* Search Bar Inside Popover */
+.google-apps-search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.google-apps-search-input {
+  width: 100%;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0 0.85rem 0 2.2rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: #ffffff;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.google-apps-search-input:focus {
+  border-color: rgba(var(--accent-rgb), 0.6);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.google-apps-search-icon {
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
+/* Scrollable Content Body */
+.google-apps-body {
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(80vh - 120px);
+  padding-right: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Scrollbar */
+.google-apps-body::-webkit-scrollbar { width: 2px !important; }
+.google-apps-body::-webkit-scrollbar-track { background: transparent !important; }
+.google-apps-body::-webkit-scrollbar-thumb { background: rgb(var(--accent-rgb)) !important; border-radius: 4px !important; }
+.google-apps-body { scrollbar-width: thin; scrollbar-color: rgb(var(--accent-rgb)) transparent; }
+
+/* Favorites Card Container */
+.google-apps-favorites-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 0.75rem 0.5rem;
+  transition: background 0.2s;
+}
+
+/* 3-Column Grid Layout */
+.google-apps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+
+.google-apps-section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 0.4rem;
+  padding-left: 0.4rem;
+}
+
+/* App Item Card */
+.google-app-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.4rem;
+  border-radius: 16px;
+  text-decoration: none;
+  color: #e3e3e3;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  background: transparent;
+  cursor: pointer;
+}
+
+.google-app-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px) scale(1.02);
+  color: #ffffff;
+}
+
+.google-app-item:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Icon Container */
+.google-app-icon-wrapper {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.google-app-item:hover .google-app-icon-wrapper {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.google-app-icon {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+}
+
+.google-app-icon svg {
+  width: 38px;
+  height: 38px;
+}
+
+/* App Label */
+.google-app-label {
+  font-size: 0.78rem;
+  font-weight: 400;
+  text-align: center;
+  color: #e3e3e3;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 0.1rem;
+}
+
+/* Edit Mode Badges */
+.google-app-pin-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  z-index: 5;
+}
+
+.google-apps-popover.edit-mode .google-app-pin-btn {
+  display: flex;
+}
+
+.google-app-pin-btn:hover {
+  transform: scale(1.2);
+  background: var(--accent-color);
+  color: #000;
+}
+
+.google-app-pin-btn.pinned {
+  background: var(--accent-color);
+  color: #000;
+  border-color: var(--accent-color);
+}
+
+/* Add Custom Link Button */
+.google-apps-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.65rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  color: var(--accent-color);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.4rem;
+}
+
+.google-apps-add-btn:hover {
+  background: rgba(var(--accent-rgb), 0.15);
+  border-color: var(--accent-color);
+  transform: translateY(-1px);
+}
